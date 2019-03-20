@@ -1,0 +1,12 @@
+Changelog
+=========
+
+0.1a1.dev1 (2019-04-13)
+-----------------------
+
+* First release on PyPI.
+* Created Read the Docs pages.
+* Only code required for imprint present initially.
+* Documentation 90% complete.
+* No tests worth speaking of.
+
