@@ -32,6 +32,12 @@ If `openpyxl`_ is not found at import time, this module will have a
 be :py:obj:`True`, and all the dependent functions and attributes of the
 module will be present.
 
+.. py:data:: xlsx_enabled
+
+   A boolean value indicating whether the ``[xlsx]``
+   :ref:`extra <installation-extras>` has been installed. If
+   :py:obj:`False`, the API will be severely limited.
+
 
 .. include:: /link-defs.rst 
 """
@@ -47,7 +53,7 @@ __all__ = ['xlsx_enabled', 'EXTENSION', 'ensure_extension',]
 try:
     from openpyxl.styles import Border
 except ImportError:
-    from . import _display_missing_extra
+    from .. import _display_missing_extra
     _display_missing_extra('xlsx', 'openpyxl')
     xlsx_enabled = False
 else:
@@ -65,10 +71,10 @@ def ensure_extension(output):
     Verify that the output object is a valid file name, and return a
     fixed version if not.
 
-    If `output` is a :py:class:`str` and does not end with `'.xlsx'`, it
-    is fixed. If it ends with ``'.xls'``, append ``'x'``, otherwise
-    append ``'.xlsx'``. All other types are assumed to be proper
-    file-like objects that are passed through.
+    If `output` is a :py:class:`str` and does not end with ``'.xlsx'``,
+    fix it. If it ends with ``'.xls'``, append ``'x'``, otherwise append
+    ``'.xlsx'``. All other types are assumed to be proper file-like
+    objects that are passed through.
     """
     if isinstance(output, str):
         return _ensure_extension(output, EXTENSION, partial_policy='append',
@@ -82,48 +88,52 @@ if xlsx_enabled:
         """
         Copy a range of cells from one worksheet to another.
 
-        All arguments besides `ws_in` are technically optional, with some
-        restrictions. This allows shortcuts for copying blocks between or
-        even within worksheets.
+        All arguments besides `ws_in` are technically optional, with
+        some restrictions. This allows shortcuts for copying blocks
+        between or even within worksheets.
 
         .. warning::
 
-           At this time, copying into the same worksheet may yield incorrect
-           results if the source and destination overlap.
+           At this time, copying into the same worksheet may yield
+           incorrect results if the source and destination overlap.
 
         Parameters
         ----------
-        ws_in : openpyxl.worksheet.Worksheet
+        ws_in : openpyxl.worksheet.worksheet.Worksheet
             The source worksheet with the data.
         row_in : int or None
             The row of the upper-left hand corner in the source. If
-            :py:obj:`None`, single-column mode will be used. In this case,
-            ``width`` may not be specified and efectively becomes ``1``.
+            :py:obj:`None`, single-column mode will be used. In this
+            case, `width` may not be specified and efectively becomes
+            ``1``.
         column_in : int or None
             The column of the upper-left hand corner of the source. If
             :py:obj:`None`, single-row mode will be used. In this case,
-            ``height`` may not be specified and efectively becomes ``1``.
+            ``height`` may not be specified and efectively becomes
+            ``1``.
         width : int or None
-             The width (number of columns) of the range. If :py:obj:`None`,
-             all available columns will be used.
+             The width (number of columns) of the range. If
+             :py:obj:`None`, all available columns will be used.
         height : int or None
             The height (number of rows) of the range. If :py:obj:`None`,
             all available rows will be used.
-        ws_out : openpyxl.worksheet.Worksheet
-            The destination worksheet. If omitted, defaults to the source
-            worksheet. In that case, the location being copied to must be
-            different.
+        ws_out : openpyxl.worksheet.worksheet.Worksheet
+            The destination worksheet. If omitted, defaults to the
+            source worksheet. In that case, the location being copied to
+            must be different.
         row_out : int or None
             The row of the upper-left hand corner in the destination. If
             omitted, defaults to the same location as the source.
         column_out : int or None
-            The column of the upper-left hand corner in the destination. If
-            omitted, defaults to the same location as the source.
+            The column of the upper-left hand corner in the destination.
+            If omitted, defaults to the same location as the source.
         delete_empty : bool
-            Whether or not to remove destination cells that are overwritten
-            by missing cells in the source range. Default is :py:obj:`True`.
+            Whether or not to remove destination cells that are
+            overwritten by missing cells in the source range. Default is
+            :py:obj:`True`.
 
-        Only one of ``row_in`` and ``column_in`` may be :py:obj:`None`. All
+
+        Only one of `row_in` and `column_in` may be :py:obj:`None`. All
         indices are one-based to conform to openpyxl notation.
 
         Return
@@ -198,16 +208,14 @@ if xlsx_enabled:
         :py:class:`openpyxl.styles.borders.Border`. Only the part of the
         border corresponding to the side of the object it goes on will
         be used. For example, only the
-        :py:attr:`~openpyxl.styles.borders.Border.top` attribute of a border specified for
-        `top`
-        will be used. The other attributes will be ignored. The borders
-        corresponding to missing or `None` arguments will not be changed in
-        this case.
+        :py:attr:`~openpyxl.styles.borders.Border.top` attribute of a
+        border specified for `top` will be used. The other attributes
+        will be ignored. The borders corresponding to missing or
+        :py:obj:`None` arguments will not be changed in this case.
 
-        This recipe is based heavily on the ``style_range`` function
-        described in
+        This function is based heavily on the recipe described in
 
-        http://openpyxl.readthedocs.io/en/default/styles.html#styling-merged-cells.
+        http://openpyxl.readthedocs.io/en/stable/styles.html#styling-merged-cells.
         """
 
         def check_side(side, direction):

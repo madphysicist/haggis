@@ -75,7 +75,8 @@ def filter(zipname, *filenames, filter=None):
     argument besides `zipname`. In this case `filter` is completely
     ignored.
 
-    File contents is re-inserted with the same metadata as the original.
+    File contents ares re-inserted with the same metadata as the
+    original.
     """
     if len(filenames) != 1 or isinstance(filenames[0], str) or \
                 isinstance(filenames[0], ZipInfo):

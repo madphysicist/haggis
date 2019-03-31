@@ -32,6 +32,12 @@ a :py:data:`plot_enabled` attribute, which will be :py:obj:`False`. If
 be :py:obj:`True`, and all the other documented functions and attributes
 of the module will be present.
 
+.. py:data:: plot_enabled
+
+   A boolean value indicating whether the ``[plot]``
+   :ref:`extra <installation-extras>` has been installed. If
+   :py:obj:`False`, the API will be severely limited.
+
 
 .. include:: /link-defs.rst 
 """
@@ -93,6 +99,7 @@ if plot_enabled:
             ``(w, h)``. If either of the elements is :py:obj:`None`, the
             aspect ratio of the figure will be preserved. Even if only
             the width is specified, `size` must be a sequence.
+
 
         All other arguments are passed through directly to
         :py:meth:`~matplotlib.figure.Figure.savefig`. Some common

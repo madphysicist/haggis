@@ -79,34 +79,38 @@ def english(num, mode='basic', hyphens=True, one_is_a=False, format='d'):
     Convert non-negative integer into its (mostly British) English
     equivalent.
 
-    Integers up to 999 vigintillion (10^64-1) are supported.
+    Integers up to 999 vigintillion (10\ :sup:`64` - 1) are supported.
 
     Usage is modifiable British as specced out in
     http://english.stackexchange.com/a/111837/207127.
 
-    Optional hyphens can be turned off by setting `hyphens` to `False`.
+    Optional hyphens can be turned off by setting `hyphens` to
+    :py:obj:`False`.
 
     The more American prefix "one" is preferred when the highest power
     of 10 is a unit. True British usage can be enabled be setting
-    `one_is_a` to `True`. This will make 100 translate as "a hundred"
-    instead of the (default) Americanized "one hundred".
+    `one_is_a` to :py:obj:`True`. This will make 100 translate as "a
+    hundred" instead of the (default) Americanized "one hundred".
 
     Supported values for `mode` are:
 
-      - 'basic': 1 -> 'one'
-      - 'ordinal': 1 -> 'first'
-      - 'suffix': 1 -> '1st' (usage rules irrelevant here)
+      - ``'basic'``: Convert ``1`` into ``'one'``.
+      - ``'ordinal'``: Convert ``1`` into ``'first'``.
+      - ``'suffix'``: Convert ``1`` into ``'1st'``. Usage rules are
+        irrelevant with this option.
 
-    Usage of higher powers of 10 may be Americanized as well:
+    Usage of higher powers of 10 are Americanized as well:
 
-      - 10^6: million
-      - 10^9: billion
-      - 10^12: trillion
-      - 10^15: quadrillion
+      - 10\ :sup:`6`: million
+      - 10\ :sup:`9`: billion
+      - 10\ :sup:`12`: trillion
+      - 10\ :sup:`15`: quadrillion
+      - etc...
 
-    `format` is a string that specifies an integer format conforming to
-    the Python formatting mini-language (used by `Formatter` and
-    `str.format`). The default is `d`.
+    `format` is an optional string that specifies an integer format
+    conforming to the Python :ref:`formatspec` (used by
+    :py:class:`string.Formatter` and :py:meth:`str.format`). The default
+    is ``'d'``.
     """
     # Check that it is really an integer and non-negative
     num = int(num)
@@ -327,7 +331,7 @@ def metric_prefix(num, long=False, eng=False):
 
     Parameters
     ----------
-    num :
+    num : number
         The number to normalize
     long : bool
         Whether to return the prefix or just the symbol. Defaults to
@@ -339,14 +343,14 @@ def metric_prefix(num, long=False, eng=False):
 
     Return
     ------
-    num :
+    num : number
         The normalized number
     prefix : str
         One of the metric prefix strings. If `num` is already
         normalized, this is an empty string.
     factor : float
         A factor such that ``num * factor`` is the original input.
-        If ``num`` is normalized, this is 1.
+        If ``num`` is normalized, `factor` is 1.0.
     """
     power = floor(log10(abs(num)))
     if eng or power < -3 or power > 3:

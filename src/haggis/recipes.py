@@ -75,7 +75,7 @@ def immutable(allow_properties=True,
 
     Return
     ------
-    decorator :
+    decorator : callable
         A class decorator that inserts a :py:meth:`~object.__setattr__`
         function into the decorated class.
 
@@ -782,9 +782,9 @@ class mapping_context:
     be used in a :ref:`with` block directly. Missing key names are
     ignored.
 
-    All mapping values will be reset to their original values when
-    the manager exits. Nesting multiple instances of this context
-    manager has a cumulative effect.
+    All mapping values are reset to their original values when the
+    manager exits. Nesting multiple instances of this context manager
+    has a cumulative effect.
 
     The context manager is reentrant: the manager can be entered and
     exited and modified before re-entry as many times as necessary.
@@ -875,22 +875,22 @@ class mapping_context:
 
     def chain(self, *args, **kwargs):
         """
-        Create a chained :py:class:`dict_context` with the same mapping
-        and :py:attr:`elements` class as this mapping.
+        Create a chained :py:class:`mapping_context` with the same
+        mapping class and :py:attr:`sentinel` object as this mapping.
 
-        The :py:attr:`sentinel` will be shared as well. This method
-        allows the example in the class docs to be rewritten as::
+        This method allows the example in the class docs to be rewritten
+        as::
 
-        d = {'a': 1, 'b': 2}
-        print(d)
-        with mapping_context(d, b=0, c=3) as mc:
+            d = {'a': 1, 'b': 2}
             print(d)
-            with mc.chain(b=1).delete('a'):
+            with mapping_context(d, b=0, c=3) as mc:
+                print(d)
+                with mc.chain(b=1).delete('a'):
+                    print(d)
                 print(d)
             print(d)
-        print(d)
 
-        Returns a new :py:class:`dict_context`.
+        Returns a new :py:class:`mapping_context`.
         """
         cls = type(self)
         dc = cls.__new__(cls)
@@ -936,8 +936,8 @@ class mapping_context:
         If value is :py:attr:`sentinel`, the element should be deleted.
 
         The default implementation works for most Python builtin mapping
-        types that support a :py:meth:`~dict.__delitem__` and
-        :py:meth:`~dict.__setitem__` methods.
+        types that support :py:meth:`~object.__delitem__` and
+        :py:meth:`~object.__setitem__` methods.
         """
         if value is self.sentinel:
             del self.mapping[key]

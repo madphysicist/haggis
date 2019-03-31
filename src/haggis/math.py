@@ -58,15 +58,15 @@ def ellipse(*args, num_points=1e3, **kwargs):
 
     The equations are either the quadratic form,
 
-    ..math::
+    .. math::
 
-        ax^2 + bxy + cy^2 + dx + ey + f = 0
+       ax^2 + bxy + cy^2 + dx + ey + f = 0
 
     or the simplified form,
 
-    ..math::
+    .. math::
 
-        \frac{(x - h)^2}{a^2} + \frac{(y - k)^2}{b^2} = 1
+       \frac{(x - h)^2}{a^2} + \frac{(y - k)^2}{b^2} = 1
 
     The first form allows for rotated ellipses through the :math:`bxy`
     coupling term. The second form allows it through the explicit
@@ -77,14 +77,19 @@ def ellipse(*args, num_points=1e3, **kwargs):
     distributed by angle, not by arc-length (unless the ellipse is a circle).
     The default number of points is 1000.
 
-    Returns x-y arrays for ellipse coordinates.
-    
-    ..note::
+    Return
+    ======
+    x : numpy.ndarray
+        Array of `num_points` x-coordinates.
+    y : numpy.ndarray
+        Array of `num_points` y-coordinates.
 
-        This code is loosely based on my Stack Overflow answer:
-        http://stackoverflow.com/a/41231100/2988730, which is in turn
-        loosely based on the forum post at
-        http://www.sosmath.com/CBB/viewtopic.php?t=17029
+    Notes
+    =====
+    This code is loosely based on my Stack Overflow answer:
+    http://stackoverflow.com/a/41231100/2988730, which is in turn
+    loosely based on the forum post at
+    http://www.sosmath.com/CBB/viewtopic.php?t=17029
     """
     t = numpy.linspace(0, 2 * math.pi, num_points)
 
@@ -156,7 +161,7 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
     the maximum.
 
     The actual fraction of the maximum that is used can be adjusted with
-    `factor` (which defaults to 0.5). Factor can be a number or the
+    `factor` (which defaults to 0.5). `factor` can be a number or the
     string ``'sigma'``, in which case it will be set to
     :math:`e^{-\\frac{1}{4}}`, the height of a Gaussian with unit
     amplitude one standard devition away from the mean. A fixed non-zero
@@ -172,9 +177,9 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
       - ``'nearest'``: nearest neighbor, i.e., use the x-value of the
         y-value that is closest to the half-max.
 
-    Normally, a single scalar is returned. If `return_points` is `True`,
-    however, two two-element tuples are returned as the second and
-    third argument. Each tuple will contain an x-y pair of the
+    Normally, a single scalar is returned. If `return_points` is
+    :py:obj:`True`, however, two two-element tuples are returned as the
+    second and third argument. Each tuple will contain an x-y pair of the
     intersection coordinates used to approximate the main return value.
     The first tuple will be for the left (rising) edge and the second
     will be for the right (trailing) edge.

@@ -24,9 +24,9 @@
 """
 Utilities for processing CSV files.
 
-Among other things, this module registers a 'text' dialect with
-:py:class:`csv.reader`, suitable for ingesting plain text arranged in
-space-separated colmns.
+Among other things, this module registers a 'text' dialect with the
+built-in :py:mod:`csv` module, suitable for ingesting plain text
+arranged in space-separated colmns.
 """
 
 import csv, contextlib
@@ -34,7 +34,7 @@ import csv, contextlib
 import numpy
 
 
-__all__ = ['load_as_numbers', 'reformat']
+__all__ = ['load_as_numbers', 'load_as_columns', 'reformat']
 
 
 csv.register_dialect('text', skipinitialspace=True, delimiter=' ')
@@ -89,11 +89,12 @@ def load_as_numbers(file, header_lines=0, dialect='text',
     empty : number
         The value to use for empty strings.
     kwargs : dict
-        Any additional parameters to pass to :py:class:`csv.reader`.
+        Any additional parameters to pass to :py:func:`csv.reader`.
 
-    Errors
+    Raises
     ------
-    ValueError: If any of the elements of the file can not be converted to a
+    ValueError
+        If any of the elements of the file can not be converted to a
         :py:class:`float` or :py:class:`int`.
     """
     if isinstance(file, str):
@@ -136,12 +137,13 @@ def load_as_columns(file, header_lines=0, empty=float('nan'),
         data may not be ragged: each line must contain the same number
         of fields as the first.
     kwargs : dict
-        Any additional parameters to pass to :py:class:`csv.reader`.
+        Any additional parameters to pass to :py:func:`csv.reader`.
 
-    Errors
+    Raises
     ------
-    ValueError: If the file contains a ragged array and `empty` is set
-        to :py:obj:`None`.
+    ValueError
+        If the file contains a ragged array and `empty` is set to
+        :py:obj:`None`.
     """
     if isinstance(file, str):
         mgr = file = open(file, 'r')

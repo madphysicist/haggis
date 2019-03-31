@@ -594,6 +594,7 @@ def register_box_style(name, top, left, bottom, right, ul, ur, bl, br):
         The character or characters that will join `bottom` and
         `right` borders in the lower right-hand corner.
 
+
     The elements of the left column of the box will be right-aligned
     based on the longest among `ul`, `left` and `bl`. The elements
     of the right side will be similarly left-aligned based on the
@@ -707,7 +708,7 @@ def check_value(string, options, insensitive=True, label='option'):
     ----------
     string : str
         The string to verify.
-    options : mapping[str->str] or iterable[str]
+    options : mapping[str, str] or iterable[str]
         A container that supports the ``in`` operator. If the container
         is a mapping that can be indexed by the input, the result is
         the "normalized" version of the string that will be returned.
@@ -717,7 +718,7 @@ def check_value(string, options, insensitive=True, label='option'):
         expected to contain casefolded items.
     label : str
         The label used to describe `string` if it is not found in
-        ``options``.
+        `options`.
 
     Return
     ------
@@ -740,7 +741,7 @@ def to_casefold(string, conv=str):
     """
     Convert the input to a string and casefold it.
 
-    Conversion is done by `conv`, which is normally :py:func:`str`, but
+    Conversion is done by `conv`, which is normally :py:class:`str`, but
     :py:func:`repr` is sometimes a good choice as well.
     """
     return conv(string).casefold()
@@ -750,7 +751,7 @@ def to_lower(string, conv=str):
     """
     Convert the input to a string and lowercase it.
 
-    Conversion is done by `conv`, which is normally :py:func:`str`, but
+    Conversion is done by `conv`, which is normally :py:class:`str`, but
     :py:func:`repr` is sometimes a good choice as well.
     """
     return conv(string).lower()
@@ -760,7 +761,7 @@ def to_upper(string, conv=str):
     """
     Convert the input to a string and uppercase it.
 
-    Conversion is done by `conv`, which is normally :py:func:`str`, but
+    Conversion is done by `conv`, which is normally :py:class:`str`, but
     :py:func:`repr` is sometimes a good choice as well.
     """
     return conv(string).upper()

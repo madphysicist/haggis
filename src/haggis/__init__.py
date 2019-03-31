@@ -22,16 +22,21 @@
 
 
 """
-The root package of the haggis library. The packages in this library are
-arranged mostly by category. Some of the dependencies to the various
-types of utilities are optional, and the corresponding modules will only
-work fully if the dependencies are present.
+:py:mod:`haggis` is the root package of the haggis library.
+
+The root package exports the :py:const:`__version__` and a
+:py:data:`Sentinel` singleton.
+
+The sub-packages and sub-modules in this library are arranged mostly by
+category. Some of the dependencies to the various types of utilities are
+optional, and the corresponding modules will only work fully if the
+dependencies are present. See the :ref:`installation-extras` section in
+the :ref:`installation`.
 """
 
 __all__ = ['__version__', 'Sentinel',]
 
 
-#: The current version of the software
 from .version import __version__
 
 

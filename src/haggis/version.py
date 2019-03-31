@@ -22,11 +22,13 @@
 
 
 """
-Holds the version of the package.
+:py:mod:`haggis.version` holds the version of the package.
 
-This module is normally accessed through the top-level `__init__.py`. It
-is provided to facilitate setup, deployment and testing.
+The actual version number is normally exported through the top-level
+:py:mod:`haggis` package, but defined here. This module exists to
+facilitate deployment and testing, so users do not need to install the
+entire package to get the version number.
 """
 
 #: The current version
-__version__ = '0.1a1.dev1'
+__version__ = '0.1a1.dev2'

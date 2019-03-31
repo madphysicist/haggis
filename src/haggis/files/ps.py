@@ -83,17 +83,17 @@ def ps_to_image(input_file, output_file, format='pngalpha', dpi=None):
     name of a `GhostScript`_ output device. The following is a list of
     preset formats with the GS devices that they map to:
 
-        - png: pngalpha
-        - jpg: jpeg
-        - bmp: bmp16m
-        - pdf: pdfwrite
+        - ``'png'``: ``pngalpha``
+        - ``'jpg'``: ``jpeg``
+        - ``'bmp'``: ``bmp16m``
+        - ``'pdf'``: ``pdfwrite``
 
     Preset names do not overlap with any output device, so any value of
-    `format` not matching a preset will be interpreted as a device name.
-    See docs at http://ghostscript.com/doc/current/Devices.htm for a
+    `format` not matching a preset is interpreted as a device name. See
+    the docs at http://ghostscript.com/doc/current/Devices.htm for a
     complete list of available output devices.
 
-    `format` defaults to 'pngalpha'.
+    `format` defaults to ``'pngalpha'``.
 
     Returns the name of the output file, or an in-memory file-like object
     (:py:class:`io.BytesIO`) if `output_file` is :py:obj:`None`.

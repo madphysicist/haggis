@@ -99,22 +99,22 @@ def module_as_dict(module, name=None, *, injection=None, injection_var=None,
         parameter to ``'__main__'`` will trigger import guards.
     injection :
         Any object that the user wishes to inject into the loading
-        process. The object will be visible to the code of the module
+        process. The object is visible to the code of the module
         under the name given by `injection_var`.
     injection_var : str or None
         The name of an attribute to inject into the loading process.
-        The name will be bound to `injection` in the module namespace.
-        The value of `injection` is never inspected. It is injected
-        or omitted based solely on the contents of this parameter.
-        A falsy value (the default) skips injection.
+        The `injection` object is bound to this name the in the module
+        namespace. The value of `injection` is never inspected. It is
+        injected or omitted based solely on the contents of this
+        parameter. A falsy value (the default) skips injection.
     recurse_injection : bool
         Whether or not to provide `injection` to recursively loaded
         modules (based on `include_var`). If recursion is enabled (the
-        default), the same variable name will be used.
+        default), the same variable name is reused.
     include_var : str or None
         The name of the attribute to look into to find additional
-        include files. Defaults to ``__include_files__``. If Falsy, do
-        not recurse.
+        include files. Defaults to ``'__include_files__'``. If Falsy,
+        do not recurse.
     skip_dunders : bool
         Whether or not to skip attributes starting with a double
         underscore (``__``) when converting to a dictionary. Defaults to
@@ -124,8 +124,8 @@ def module_as_dict(module, name=None, *, injection=None, injection_var=None,
         loaded namespace when converting to a dictionary. Defaults to
         :py:obj:`True`.
     skip_classes : bool
-        Whether or not to class objects that are found in the loaded
-        namespace when converting to a dictionary. Defaults to
+        Whether or not to skip class objects that are found in the
+        loaded namespace when converting to a dictionary. Defaults to
         :py:obj:`False`.
     skip_functions : bool
         Whether or not to skip function objects that are found in the

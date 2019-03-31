@@ -12,11 +12,11 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
@@ -32,6 +32,12 @@ If `astropy`_ is not found at import time, this module will have a
 be :py:obj:`True`, and all the dependent functions and attributes of the
 module will be present.
 
+.. py:data:: fits_enabled
+
+   A boolean value indicating whether the ``[scio]``
+   :ref:`extra <installation-extras>` has been installed. If
+   :py:obj:`False`, the API will be severely limited.
+
 
 .. include:: /link-defs.rst 
 """
@@ -45,7 +51,7 @@ __all__ = ['fits_enabled']
 try:
     from astropy.io import fits
 except ImportError:
-    from . import _display_missing_extra
+    from .. import _display_missing_extra
     _display_missing_extra('scio', 'astropy')
     fits_enabled = False
 else:

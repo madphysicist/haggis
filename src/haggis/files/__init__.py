@@ -54,44 +54,45 @@ def ensure_extension(name, ext, partial_policy=None, partial_limit=None):
     Recognized values for `partial_policy` are as follows (case
     insensitive):
 
-        None, 'none', ''
-            No partial extensions are recognized. If `name='a.xls'` and
-            `ext=.xlsx`, the result will be `a.xls.xlsx`. Similarly for
-            `b.jpg`, `.jpeg`, the result will be `b.jpg.jpeg`.
-        'append', '+'
+        :py:obj:`None`, ``'none'``, ``''``
+            No partial extensions are recognized. If ``name='a.xls'``
+            and ``ext='.xlsx'``, the result is ``'a.xls.xlsx'``.
+            Similarly, for ``'b.jpg'``, ``'.jpeg'``, the result is
+            ``'b.jpg.jpeg'``.
+        ``'append'``, ``'+'``
             Existing extension can be extended by at most
             `partial_limit` characters to acheive the target. If
-            `name='a.xls'` and `ext=.xlsx`, the result will be `a.xlsx`.
-            However, for `b.jpg`, `.jpeg`, the result will be
-            `b.jpg.jpeg`.
-        'insert', '^'
+            ``name='a.xls'`` and ``ext='.xlsx'``, the result is
+            ``'a.xlsx'``. However, for ``'b.jpg'``, ``'.jpeg'``, the
+            result is ``'b.jpg.jpeg'``.
+        ``'insert'``, ``'^'``
             Existing extension can have up to `partial_limit` characters
-            inserted anywhere to acheive the target. If `name='a.xls'`
-            and `ext=.xlsx`, the result will be `a.xlsx`. Similarly, for
-            `b.jpg`, `.jpeg`, the result will be `b.jpeg`.
-        'strip', '-'
+            inserted anywhere to achieve the target. If ``name='a.xls'``
+            and ``ext='.xlsx'``, the result is ``'a.xlsx'``. Similarly,
+            for ``'b.jpg'``, ``'.jpeg'``, the result is ``b.jpeg``.
+        ``'strip'``, ``'-'``
             The existing extension may be loner than the desired one, so
             up to `partial_limit` characters may be stripped off the end
-            to match the target. If `name='a.xlsx'` and `ext=.xls`, the
-            result will be `a.xls`. However, for `b.jpeg`, `.jpg`, the
-            result will be `b.jpeg.jpg`.
-        'remove', 'x'
+            to match the target. If ``name='a.xlsx'`` and
+            ``ext='.xls'``, the result is ``'a.xls'``. However, for
+            ``'b.jpeg'``, ``'.jpg'``, the result is ``'b.jpeg.jpg'``.
+        ``'remove'``, ``'x'``
             The existing extension may be longer than the desired one,
             so removing up to `partial_limit` characters anywhere in the
-            name is allowed. If `name='b.jpeg'` and `ext=.jpg`, the
-            result will be `b.jpg`. However, if `name=b.jpg` and
-            `ext=.jpeg`, the result is `b.jpg.jpeg`
-        'replace', 'r'
+            name is allowed. If ``name='b.jpeg'`` and ``ext='.jpg'``,
+            the result is ``'b.jpg'``. However, for ``name='b.jpg'`` and
+            ``ext='.jpeg'``, the result is ``'b.jpg.jpeg'``.
+        ``'replace'``, ``'r'``
             Replace any existing extension with the provided one.
-        'create', 'c'
+        ``'create'``, ``'c'``
             Create the extension only if one does not already exist.
 
     `partial_limit` determines the maximum number of characters that can
-    be modified to achieve the target. If `None` or a number greater
-    than the length of `ext` mean "any number". If zero, the result will
-    be the same as for `partial_policy='none'` regardless of the actual
-    value of `partial_policy`, unless `partial_policy` is 'replace',
-    which completely ignores the limit.
+    be modified to achieve the target. If :py:obj:`None` or a number
+    greater than the length of `ext` mean "any number". If zero, the
+    result is the same as for `partial_policy='none'` regardless of the
+    actual value of `partial_policy`, unless `partial_policy` is
+    ``'replace'``, which completely ignores the limit.
     """
     if partial_policy is not None:
         partial_type = check_value(partial_policy, ensure_extension.modes,
@@ -166,7 +167,7 @@ def insert_suffix(filename, suffix, allow_duplicate=False):
 
     Parameters
     ----------
-    filename : str or ~pathlib.path
+    filename : str or ~pathlib.Path
         The name to modify.
     suffix : str
         The suffix to insert.
@@ -189,41 +190,43 @@ def insert_suffix(filename, suffix, allow_duplicate=False):
 class PreOpenedFile:
     """
     A proxy class for file objects that does not open or close the file
-    when `__enter__`, `__exit__` and `close` are invoked.
+    when :py:meth:`__enter__`, :py:meth:`__exit__` and :py:meth:`close`
+    are invoked.
 
     This version of the usual context manager is useful when processing
     opened files along with strings.
 
     Note that this is not a general-purpose proxy that can be used for
     most objects because it does not define any special methods besides
-    `__repr__`, `__enter__`, `__exit__` and `close` as class attributes.
+    :py:meth:`__repr__`, :py:meth:`__enter__`, :py:meth:`__exit__` and
+    :py:meth:`close` as class attributes.
     """
     def __init__(self, file):
         self.__file = file
 
     def __getattr__(self, name):
         """
-        Passes through access to all missing attributes to the
-        underlying file object.
+        Pass through access to all missing attributes to the underlying
+        file object.
         """
         return getattr(self.__file, name)
 
     def __repr__(self):
         """
-        Returns a string representation of the underlying file.
+        Return a string representation of the underlying file.
         """
         return '{}({})'.format(__class__.__name__, repr(self.__file))
 
     def __enter__(self, *args, **kwargs):
-        """ Returns this proxy object. """
+        """ Return this proxy object. """
         return self
 
     def __exit__(self, *args, **kwargs):
-        """ Does nothing. """
+        """ Do nothing. """
         pass
 
     def close(self):
-        """ Does nothing. """
+        """ Do nothing. """
         pass
 
 

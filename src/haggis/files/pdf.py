@@ -61,16 +61,16 @@ def pdf_to_image(input_path, output_path, format=None):
 
     This function uses the :py:mod:`subprocess` module to operate. It
     requires the presence of the :program:`pdftoppm` program as well as
-    :program:`convert` from `ImageMagic`_.
+    :program:`convert` from `ImageMagick`_.
 
     `input_path` may be a string path or a file-like object.
 
     `output_path` may be a string, a file-like object or :py:obj:`None`.
-    If :py:obj:`None`, an :py:class:`io.BytesIO` object will be returned
-    containing the image. `format` will default to ``'png'`` if not set
+    If :py:obj:`None`, an :py:class:`io.BytesIO` object is returned
+    containing the image. `format` defaults to ``'png'`` if not set
     explicitly in this case.
 
-    Returns the name of the output file, or an in-memory file-like object
+    Return the name of the output file, or an in-memory file-like object
     (:py:class:`io.BytesIO`) if `output_path` is :py:obj:`None`.
 
     The idea for behind this conversion mechanism comes from 

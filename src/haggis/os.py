@@ -91,11 +91,9 @@ def filter_copy(src, dest, hook=None, *, encoding=None, strip_newlines=False):
 
     `src` and `dest` can be either file-like objects or strings or file
     descriptors. If `src` is file-like, it will only be copied from the
-    current position of the cursor.
-
-    If `dest` is a file-like object, it will be appended or overwritten
-    from the current position of the cursor. Otherwise, it will be
-    truncated.
+    current position of the cursor. If `dest` is file-like, it will be
+    appended to or overwritten from the current position of the cursor.
+    Otherwise, it will be truncated.
 
     `hook` is a function that accepts a line from `src` and returns the
     modified line to write into `dest`. The default value of
@@ -314,8 +312,10 @@ class StderrTee(Tee):
 @contextmanager
 def chdir_context(path, current=None):
     """
-    Return a context manager that changes the current directory using
+    A context manager that changes the current directory using
     :py:func:`os.chdir`.
+
+    The `current` directory is reinstated once the manager exits.
 
     Parameters
     ----------

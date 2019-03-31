@@ -29,8 +29,8 @@ http://stackoverflow.com/a/38008501/2988730.
 
 This module relies on the ``[plot]`` and ``[latex]``
 :ref:`extras <installation-extras>`. The :py:func:`render_latex` function
-does not rely on ``[plot]``. All the other methods work with
-`matplotlib`_.
+does not rely on ``[plot]``. All the other functions work with
+`matplotlib`_. See :py:data:`haggis.mpl_util.plot_enabled`.
 
 
 .. include:: /link-defs.rst
@@ -71,8 +71,8 @@ convert_exe = 'convert'
 
 def add_use_package(package_name):
     r"""
-    Add a single package via '\usepackage{package_name}' to the LaTeX
-    premble.
+    Add a single package via ``\usepackage{package_name}`` to the
+    LaTeX premble.
     """
     if package_name not in package_list:
         package_list.append(package_name)
@@ -85,9 +85,9 @@ def render_latex(formula, file=None, format='png', *, fontsize=12, dpi=None,
 
     If `file` is :py:obj:`None` (the default), return a
     :py:class:`~io.BytesIO` object containing the rendered image in PNG
-    format. The stream is rewound, so can be read immediately. Otherwise,
-    output to the specified file (which may be a file name string or any
-    file-like object).
+    format. The stream is rewound, so can be read immediately.
+    Otherwise, output to the specified file (which may be a file name
+    string or any file-like object).
 
     The sequence of system commands run by this function is based
     largely on :program:`text2im` (http://www.nought.de/tex2im.php).
@@ -203,8 +203,8 @@ if mpl_util.plot_enabled:
 
     def add_use_package(package_name):
         r"""
-        Add a single package via '\usepackage{package_name}' to the list of
-        `matplotlib`_\ 's LaTeX imports.
+        Add a single package via ``\usepackage{package_name}`` to the
+        list of `matplotlib`_\ 's LaTeX imports.
 
         Imports can be added to ``text.latex.preamble`` or
         ``pgf.preamble`` RC keys, depending on the current backend.

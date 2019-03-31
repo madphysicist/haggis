@@ -15,7 +15,7 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
@@ -58,12 +58,11 @@ needs_sphinx = '1.7.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.imgmath',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -88,7 +87,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', '_src', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', '_src', '_intersphinx', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -115,7 +114,7 @@ else:
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static', 'demos']
+html_static_path = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -189,14 +188,28 @@ texinfo_documents = [
 
 # -- Options for intersphinx extension ---------------------------------------
 
-# Example configuration for intersphinx: refer to the Python standard library.
+# Intersphinx configuration: attempt to download object listings from the
+# official documentations, use a (possibly outdated) local backup if that fails.
 intersphinx_mapping = {
-    'astropy': ('http://docs.astropy.org/en/stable/', None),
-    'haggis': ('https://haggis.readthedocs.io/en/latest/', None),
-    'openpyxl': ('https://openpyxl.readthedocs.io/en/stable/', None),
-    'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None),
-    'python': ('https://docs.python.org/3/', None),
-    'python-docx': ('https://python-docx.readthedocs.io/en/latest/', None),
+    'astropy': (
+        'http://docs.astropy.org/en/stable/',
+        (None, '_intersphinx/astropy.inv')
+    ), 'matplotlib': (
+        'https://matplotlib.org/',
+        (None, '_intersphinx/matplotlib.inv')
+    ), 'openpyxl': (
+        'https://openpyxl.readthedocs.io/en/stable/',
+        (None, '_intersphinx/openpyxl.inv')
+    ), 'pandas': (
+        'http://pandas.pydata.org/pandas-docs/stable/',
+        (None, '_intersphinx/pandas.inv')
+    ), 'python': (
+        'https://docs.python.org/3/',
+        (None, '_intersphinx/python.inv')
+    ), 'docx': (
+        'https://python-docx.readthedocs.io/en/latest/',
+        (None, '_intersphinx/docx.inv')
+    ),
 }
 
 # -- Options for todo extension ----------------------------------------------

@@ -36,37 +36,39 @@ import warnings
 
 
 __all__ = [
+    'KEEP', 'KEEP_WARN', 'OVERWRITE', 'OVERWRITE_WARN', 'RAISE',
     'add_logging_level', 'add_trace_level', 'configure_logger',
     'reset_handlers',
     'LogMaxFilter', 'MetaLoggableType',
-    'KEEP', 'KEEP_WARN', 'OVERWRITE', 'OVERWRITE_WARN', 'RAISE',
 ]
 
 #: Default format string for the root logger. This string is set up by
 #: the :py:func:`configure_logger` method.
 _log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-#: When adding a new logging level, silently keep the old level in case
-#: of conflict.
+#: When adding a new logging level, with :py:func:`add_logging_level`,
+#: silently keep the old level in case of conflict.
 KEEP = 'keep'
 
 
-#: When adding a new logging level, keep the old level in case of
-#: conflict, and issue a warning.
+#: When adding a new logging level, with :py:func:`add_logging_level`,
+#: keep the old level in case of conflict, and issue a warning.
 KEEP_WARN = 'keep-warn'
 
 
-#: When adding a new logging level, silently overwrite any existing
-#: level in case of conflict.
+#: When adding a new logging level, with :py:func:`add_logging_level`,
+#: silently overwrite any existing level in case of conflict.
 OVERWRITE = 'overwrite'
 
 
-#: When adding a new logging level, overwrite any existing level in
-#: case of conflict, and issue a warning.
+#: When adding a new logging level, with :py:func:`add_logging_level`,
+#: overwrite any existing level in case of conflict, and issue a
+#: warning.
 OVERWRITE_WARN = 'overwrite-warn'
 
 
-#: When adding a new logging level, raise an error in case of conflict.
+#: When adding a new logging level, with :py:func:`add_logging_level`,
+#: raise an error in case of conflict.
 RAISE = 'raise'
 
 
@@ -76,14 +78,17 @@ class MetaLoggableType(abc.ABCMeta):
     classes.
 
     The logger channel will be the fully qualified name of the class
-    including package and module prefixes. If a `__namespace__`
-    attribute is found in the class definition, it will be prefixed to
-    the qualified name (with a dot).
+    including package and module prefixes.
+
+    .. py:attribute:: __namespace__
+
+       If this attribute is found in the class definition, it will be
+       prefixed to the qualified name (with a dot).
 
     .. py:attribute:: logger
 
        This attribute is assigned to all new classes based on the name
-       and possibly `__namespace__`.
+       and possibly :py:attr:`__namespace__`.
     """
 
     def __init__(cls, name, bases, dct):
@@ -103,7 +108,7 @@ class MetaLoggableType(abc.ABCMeta):
 
 
 def add_logging_level(level_name, level_num, method_name=None,
-                      if_exists='keep', *, exc_info=False, stack_info=False):
+                      if_exists=KEEP, *, exc_info=False, stack_info=False):
     """
     Comprehensively add a new logging level to the :py:mod:`logging`
     module and the currently configured logging class.
@@ -131,22 +136,22 @@ def add_logging_level(level_name, level_num, method_name=None,
     method_name : str
         The name of the convenience method for both :py:mod:`logging`
         itself and the class returned by
-        :py:meth:`logging.getLoggerClass` (usually just
+        :py:func:`logging.getLoggerClass` (usually just
         :py:class:`logging.Logger`). If ``method_name`` is not
         specified, ``level_name.lower()`` is used instead.
     if_exists : {KEEP, KEEP_WARN, OVERWRITE, OVERWRITE_WARN, RAISE}
-        What to do if a level with ``level_name`` appeart to already be
+        What to do if a level with `level_name` appears to already be
         registered in the :py:mod:`logging` module:
 
-        KEEP
+        :py:const:`KEEP`
             Silently keep the old level as-is.
-        KEEP_WARN
+        :py:const:`KEEP_WARN`
             Keep the old level around and issue a warning.
-        OVERWRITE
+        :py:const:`OVERWRITE`
             Silently overwrite the old level.
-        OVERWRITE_WARN
+        :py:const:`OVERWRITE_WARN`
             Overwrite the old level and issue a warning.
-        RAISE
+        :py:const:`RAISE`
             Raise an error.
 
         The default is :py:const:`KEEP_WARN`.
@@ -303,7 +308,7 @@ def add_trace_level(if_exists=KEEP_WARN):
 
 def LogMaxFilter(level, inclusive=True):
     """
-    Return a level-based filter that caps the maximum allowed log level.
+    Create a level-based filter that caps the maximum allowed log level.
 
     Levels can be compared either exclusively or inclusively to the
     threshold.
@@ -383,8 +388,7 @@ def configure_logger(log_file=None, file_level='NOTSET',
         Whether or not to print tracebacks for actual warnings (not log
         entries with a warning level) caught by the Python global
         warning logger. Defaults to :py:obj:`True`. Custom
-        :py:meth:`~logging.Logger.warning` and
-        :py:meth:`~logging.Logger.warn` methods are hooked into the
+        :py:meth:`~logging.Logger.warning` methods are hooked into the
         logger for ``"py.warnings"``.
     """
     add_trace_level()
@@ -481,7 +485,7 @@ def reset_handlers(handler, level='NOTSET', format=None, logger=None,
         If a superclass of `handler`, it will be used as the filter
         instead of ``type(handler)``. Any other type will raise an error.
         If :py:obj:`None`, then filtering by type will be done only if
-        `filter_hook` is not set. A :py:type:`bool` explicitly sets
+        `filter_hook` is not set. A :py:class:`bool` explicitly sets
         filtering by ``type(handler)`` on and off regardless of
         ``filter_hook``.
     filter_hook : None or callable

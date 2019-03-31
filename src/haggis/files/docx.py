@@ -37,6 +37,12 @@ or buggy in the original library. Often, these methods are inspired by
 recipes found in the corresponding bug reports and Stack Overflow posts,
 which are referenced as appropriate.
 
+.. py:data:: docx_enabled
+
+   A boolean value indicating whether the ``[docx]``
+   :ref:`extra <installation-extras>` has been installed. If
+   :py:obj:`False`, the API will be severely limited.
+
 
 .. include:: /link-defs.rst 
 """
@@ -63,7 +69,7 @@ try:
 
     from lxml import etree
 except ImportError:
-    from . import _display_missing_extra
+    from .. import _display_missing_extra
     _display_missing_extra('docx', ['python-docx', 'lxml'])
     docx_enabled = False
 else:
@@ -90,8 +96,8 @@ if docx_enabled:
         :py:class:`~docx.table._Cell` object, which itself can contain
         paragraphs and tables.
 
-        This function is taken verbatim from
-        https://github.com/python-openxml/python-docx/issues/40.
+        This function is taken verbatim from python-docx
+        `Issue #40 <https://github.com/python-openxml/python-docx/issues/40>`_.
         Hopefully it will make it to `python-docx`_ soon.
 
 
@@ -119,8 +125,8 @@ if docx_enabled:
         The TOC is a stub and needs to be updated manually when the
         end-user opens the generated document in a Word client.
 
-        This function is taken almost verbatim from
-        https://github.com/python-openxml/python-docx/issues/36#issuecomment-145302669.
+        This function is taken almost verbatim from @mustash's comment
+        to python-docx `Issue #36 <https://github.com/python-openxml/python-docx/issues/36#issuecomment-145302669>`_.
         See the previous comment in the thread for more information.
         """
         paragraph = doc.add_paragraph()
@@ -150,7 +156,7 @@ if docx_enabled:
 
     def merge_row(table, row=0):
         """
-        Merge a row in a :py:class:`docx.table.Table` into a single
+        Merge a row in a :py:class:`~docx.table.Table` into a single
         cell.
 
         Operates on the first row by default.
@@ -170,8 +176,9 @@ if docx_enabled:
         height : docx.shared.Length
             The height to assign.
 
-        This function will be obsolted by PR#301 to Python docx:
-        https://github.com/python-openxml/python-docx/pull/301
+
+        This function will be obsolted by python-docx
+        `Pull Request #301 <https://github.com/python-openxml/python-docx/pull/301>`_.
         """
         trHeight = OxmlElement('w:trHeight')
         trHeight.set(qn('w:val'), str(height.twips))
@@ -375,34 +382,36 @@ if docx_enabled:
             one but contains an updated font with the requested color.
         name: str
             The name of the font. :py:obj:`None` if not to be modified.
-            Added as `` + "NAME"``.
+            Added as ``... + "NAME"``.
         size: float or int
             The font size in points. :py:obj:`None` if not to be
-            modified. Added as `` + SIZEpt``.
+            modified. Added as ``... + SIZEpt``.
         color: tuple(int, int, int)
             A three-element tuple of integers that represents the RGB
             components of the color to set, or `None` if color is not to
             be modified. Other iterables are accepted, but they are
-            converted to tuples internally. Added as `` + rgb(R,G,B)``.
+            converted to tuples internally. Added as
+            ``... + rgb(R,G,B)``.
+
 
         All remaining arguments are processed as tri-state booleans,
         where :py:obj:`None` indicates no modification. Flags are
-        appended as ``+ FLAG`` if :py:obj:`True`, ``- FLAG`` if
+        appended as ``... + FLAG`` if :py:obj:`True`, ``... - FLAG`` if
         :py:obj:`False`. Supported arguments flags are: 
 
-          - bold
-          - italic
-          - underline
-          - subscript
-          - superscript
-          - all_caps
-          - emboss
-          - strike
-          - double_strike
-          - imprint
-          - outline
-          - shadow
-          - small_caps
+          - `bold`
+          - `italic`
+          - `underline`
+          - `subscript`
+          - `superscript`
+          - `all_caps`
+          - `emboss`
+          - `strike`
+          - `double_strike`
+          - `imprint`
+          - `outline`
+          - `shadow`
+          - `small_caps`
         """
         if runs is None:
             return
@@ -463,8 +472,8 @@ if docx_enabled:
         This may or may not work properly if the paragraph contains
         non-trivial content, like pictures.
 
-        Inspiration:
-        https://github.com/python-openxml/python-docx/issues/33#issuecomment-77661907
+        Inspiration is from @scanny's comment regarging python-docx
+        `Issue #33 <https://github.com/python-openxml/python-docx/issues/33#issuecomment-77661907>`_.
         """
         p = paragraph._element
         p.getparent().remove(p)
@@ -483,33 +492,33 @@ if docx_enabled:
 
         Parameters
         ----------
-        doc : docx.document.Document
+        doc : ~docx.document.Document
             The document to add the list into.
-        par : docx.paragraph.Paragraph
+        par : ~docx.text.paragraph.Paragraph
             The paragraph to turn into a list item.
-        prev : docx.paragraph.Paragraph or None
+        prev : ~docx.text.paragraph.Paragraph or None
             The previous paragraph in the list. If specified, the
             numbering and styles will be taken as a continuation of this
             paragraph. If omitted, a new numbering scheme will be
             started.
         level : int or None
             The level of the paragraph within the outline. If `prev` is
-            set, defaults to the same level as in ``prev``. Otherwise,
+            set, defaults to the same level as in `prev`. Otherwise,
             defaults to zero.
         num : bool
-            If ``prev`` is :py:obj:`None` and the style of the paragraph
+            If `prev` is :py:obj:`None` and the style of the paragraph
             does not correspond to an existing numbering style, this
             will determine wether or not the list will be numbered or
             bulleted. The result is not guaranteed, but is fairly safe
             for most Word templates.
 
-        The code here is mainly taken from python-docx issue #25:
-            https://github.com/python-openxml/python-docx/issues/25
-        And PR#110:
-            https://github.com/python-openxml/python-docx/pull/110
-        In particular see, the two comments by @yurac:
-            https://github.com/python-openxml/python-docx/issues/25#issuecomment-140334543
-            https://github.com/python-openxml/python-docx/issues/25#issuecomment-143231954
+
+        The code here is mainly taken from python-docx
+        `Issue #25 <https://github.com/python-openxml/python-docx/issues/25>`_
+        and `Pull Request #110 <https://github.com/python-openxml/python-docx/pull/110>`_
+        In particular, see the two comments by @yurac:
+        `[1] <https://github.com/python-openxml/python-docx/issues/25#issuecomment-140334543>`_
+        and `[2] <https://github.com/python-openxml/python-docx/issues/25#issuecomment-143231954>`_
         """
         xpath_options = {
             True: {'single': 'count(w:lvl)=1 and ', 'level': 0},
@@ -586,25 +595,24 @@ if docx_enabled:
 
     def add_section(doc, orientation=WD_ORIENTATION.PORTRAIT):
         """
-        Add a new section to the document with the specified
-        orientation.
+        Add a new section to `doc` with the specified page orientation.
 
         This function always creates a new section with page break style
-        :py:attr:`~docx.enum.section.WD_SECTION_START.NEW_PAGE`, even if
+        :ref:`wdsectionstart`.NEW_PAGE, even if
         the previous section has the same orientation. The width and
         height of the new section will be swapped if necessary so that
         the width is greater in landscape mode and the height is greater
         in portrait mode.
 
-        `orientation` may be one of the
-        :py:class:`~docx.enum.section.WD_ORIENTATION` enums, or the
-        strings {``'portrait'``, ``'landscape'``} (case insensitive).
+        `orientation` may be one of the :ref:`wdorientation` enums, or
+        the strings {``'portrait'``, ``'landscape'``} (case
+        insensitive).
 
         Returns the newly created section.
 
-        This function is a workaround for python-docx bug #214:
-        https://github.com/python-openxml/python-docx/issues/214. The
-        same workaround is also described in
+        This function is a workaround for python-docx bug
+        `#214 <https://github.com/python-openxml/python-docx/issues/214>`_.
+        The same workaround is also described in
         http://stackoverflow.com/q/31893557/2988730.
         """
         if isinstance(orientation, str):
@@ -640,7 +648,7 @@ if docx_enabled:
         def insert_math_ml(par, math_ml):
             """
             Convert a MathML equation to an Open MathML format suitable
-            for MS documents, and inserts it into the specified
+            for MS documents, and insert it into the specified
             paragraph.
 
             The MathML is converted to Open MathML format using an
@@ -649,7 +657,7 @@ if docx_enabled:
 
             Parameters
             ----------
-            par : Paragraph
+            par : ~docx.text.paragraph.Paragraph
                 The paragraph to append the equation to.
             math_ml : str or file-like
                 If a string that starts with an opening ``<math>`` tag
@@ -665,12 +673,9 @@ if docx_enabled:
             expected location of the file.
 
             This function and its setup are based on the discussion of
-            issue #320 on the python-docx GitHub page:
-
-                https://github.com/python-openxml/python-docx/issues/320
-
-            The file MML2OMML.XSL was provided by user @peepall as part
-            of the discussion.
+            `issue #320 <https://github.com/python-openxml/python-docx/issues/320>`_
+            on the python-docx GitHub page. The file MML2OMML.XSL was provided
+            by user @peepall as part of the discussion.
             """
             loader = etree.parse
             if isinstance(math_ml, str):

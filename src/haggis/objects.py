@@ -122,8 +122,8 @@ def copy_class(c, globals=None, module=None):
     Notes
     -----
     This function may not work properly for classes whose metaclass does
-    not invoke :py:meth:`type.__new__` at some point in the construction
-    process.
+    not invoke :py:meth:`type.new <object.__new__>` at some point in the
+    construction process.
 
     Based on https://stackoverflow.com/a/49157516/2988730.
     """
@@ -188,7 +188,7 @@ class HiddenPropMeta(type):
     A hidden property is one that stores its value under a 
     :py:attr:`~object.__dict__` key with the same name. This meta-class
     is therefore incompatible with anything that uses
-    :py:obj:`__slots__`.
+    :py:obj:`~object.__slots__`.
 
     .. py:attribute:: __hidden_properties__
 

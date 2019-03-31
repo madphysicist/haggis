@@ -31,7 +31,8 @@ __all__ = ['ErrorTransform']
 class ErrorTransform:
     """
     A context manager that translates any exceptions into a different
-    type with a predefined message.
+    type with a predefined message. The constructor arguments are
+    assigned to class attributes directly.
 
     .. py:attribute:: in_type
 
@@ -44,16 +45,18 @@ class ErrorTransform:
 
     .. py:attribute:: message
 
-       A format string containing the message of the rethrown error.
+       A format string containing the message of the rethrown error. The
+       string is expected to conform to the :ref:`formatspec`.
 
     .. py:attribute:: args
 
-       Additional positional arguments to pass to `message.format`.
+       Additional positional arguments to pass to
+       :py:meth:`message.format <str.format>`.
 
     .. py:attribute:: kwargs
 
        Additional keyword arguments to pass to `message.format`. There
-       will always be three dynamic keywords passed in:
+       three dynamic keywords are always passed in:
 
          - ``type``: The class of the trapped error.
          - ``str``: The result of ``str(exc)`` on the trapped error.
@@ -76,8 +79,8 @@ class ErrorTransform:
     def KeyError(cls, out_type, name='dictionary'):
         """
         Create an instance of this class suitable for handling
-        occurrences of :py:exc:`KeyError` caused by dictionary access
-        via :py:meth:`dict.__getitem__`.
+        occurrences of :py:exc:`KeyError` caused by, e.g. dictionary
+        access via :py:meth:`~object.__getitem__`.
 
         :py:attr:`in_type` is implicitly :py:exc:`KeyError` and `name`
         is the name of the dictionary where the error occurred.

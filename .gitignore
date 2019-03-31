@@ -31,13 +31,5 @@ dist/
 # pytest artifacts
 .cache/
 
-# make_zip artifacts
-*.zip
-
-# Demo images
-*.png
-*.svg
-*.ps
-*.eps
-*.pgf
-*.pdf
+# doc artifacts
+/doc/_build/
