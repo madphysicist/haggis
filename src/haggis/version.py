@@ -31,4 +31,4 @@ entire package to get the version number.
 """
 
 #: The current version
-__version__ = '0.1a1.dev2'
+__version__ = '0.1a1'

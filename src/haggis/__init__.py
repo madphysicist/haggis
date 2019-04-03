@@ -24,8 +24,8 @@
 """
 :py:mod:`haggis` is the root package of the haggis library.
 
-The root package exports the :py:const:`__version__` and a
-:py:data:`Sentinel` singleton.
+The root package contains the :py:data:`__version__`, a
+:py:data:`Sentinel` singleton and its associated type.
 
 The sub-packages and sub-modules in this library are arranged mostly by
 category. Some of the dependencies to the various types of utilities are
@@ -34,13 +34,13 @@ dependencies are present. See the :ref:`installation-extras` section in
 the :ref:`installation`.
 """
 
-__all__ = ['__version__', 'Sentinel',]
+__all__ = ['__version__', 'Sentinel', 'SentinelType']
 
 
 from .version import __version__
 
 
-class _Sentinel:
+class SentinelType:
     """
     A class that can be used to create sentinel objects for cases where
     :py:obj:`None` is not suitable for some reason.
@@ -61,9 +61,7 @@ class _Sentinel:
 #: suitable option (e.g., when :py:obj:`None` has a special meaning).
 #:
 #: This object evaluates to boolean :py:obj:`False`.
-Sentinel = _Sentinel()
-
-del _Sentinel
+Sentinel = SentinelType()
 
 
 def _display_missing_extra(extra, libs=None):

@@ -95,7 +95,7 @@ def ensure_extension(name, ext, partial_policy=None, partial_limit=None):
     ``'replace'``, which completely ignores the limit.
     """
     if partial_policy is not None:
-        partial_type = check_value(partial_policy, ensure_extension.modes,
+        partial_type = check_value(partial_policy, ensure_extension.policies,
                                    label='match policy')
     else:
         partial_type = None
@@ -152,7 +152,7 @@ def ensure_extension(name, ext, partial_policy=None, partial_limit=None):
     return name + ext
 
 
-ensure_extension.modes = (
+ensure_extension.policies = (
     'none', '', 'append', '+', 'insert', '^', 'strip', '-', 'remove', 'x',
     'replace', 'r', 'create', 'c',
 )
