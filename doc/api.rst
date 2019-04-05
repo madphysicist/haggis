@@ -28,9 +28,42 @@ API Docs
 .. automodule:: haggis
    :members:
 
+   ----------
+   Attributes
+   ----------
+
    .. attribute:: __version__
 
       The current version is |release|.
+
+
+.. _api-contents:
+
+--------------------
+Modules and Packages
+--------------------
+
+.. autosummary::
+
+   haggis.exceptions
+   haggis.files
+   haggis.files.csv
+   haggis.files.docx
+   haggis.files.fits
+   haggis.files.pdf
+   haggis.files.ps
+   haggis.files.xlsx
+   haggis.files.xml
+   haggis.files.zip
+   haggis.latex_util
+   haggis.load
+   haggis.logs
+   haggis.math
+   haggis.mpl_util
+   haggis.numbers
+   haggis.objects
+   haggis.os
+   haggis.recipes
 
 
 ---------------------
