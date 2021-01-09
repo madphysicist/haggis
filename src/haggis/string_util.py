@@ -38,7 +38,8 @@ from math import ceil
 from operator import index
 from os import linesep
 
-from .recipes import grouper, option_lookup, shift_left
+from .mapping import option_lookup
+from .recipes import grouper, shift_left
 
 
 __all__ = [
