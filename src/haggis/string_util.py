@@ -19,6 +19,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 09 Jan 2021: Added to_hex, camel2snake, snake2camel, timestamp
 
 
 """
@@ -30,7 +31,8 @@ versions that start with ``split_``, which accept iterables of lines
 instead of entire strings.
 """
 
-from collections import namedtuple
+from collections import deque, namedtuple
+from datetime import datetime
 from itertools import chain, repeat
 from math import ceil
 from operator import index
@@ -46,7 +48,9 @@ __all__ = [
     'horiz_cat', 'split_horiz_cat',
     'make_box', 'register_box_style',
     'check_value',
-    'to_casefold', 'to_lower', 'to_upper',
+    'to_casefold', 'to_lower', 'to_upper', 'to_hex',
+    'camel2snake', 'snake2camel',
+    'timestamp',
 ]
 
 
@@ -765,3 +769,106 @@ def to_upper(string, conv=str):
     :py:func:`repr` is sometimes a good choice as well.
     """
     return conv(string).upper()
+
+
+def to_hex(b, prefix='', sep=''):
+    """
+    Convert a string of bytes to a hex string.
+
+    Parameters
+    ----------
+    b : bytes or bytearray
+        The bytes to display.
+    prefix : str
+        The prefix to prepend to each byte. The default is an empty
+        string. Another common choice is ``'0x'``.
+    sep : str, optional
+        The separator to place between bytes. The default is an empty
+        string: hex values are concatenated all together.
+
+    Returns
+    -------
+    str
+        A string consisting of the characters 0-9, A-Z (as well as
+        `prefix` and `sep`), with two digits per byte of input.
+    """
+    return sep.join(f'{x:02X}' for x in b)
+
+
+def camel2snake(string):
+    """
+    Convert a string to snake_case, assuming input in CamelCase.
+
+    Parameters
+    ----------
+    string : str
+        The string to convert.
+
+    Returns
+    -------
+    str
+        A string similar to the input, but any uppercase letters are
+        lowercased and an underscore is prepended, unless there is one
+        there already.
+    """
+    chars = deque()
+    for i, c in enumerate(str(string)):
+        if c.isupper():
+            if i > 0 and chars[-1] != '_':
+                chars.append('_')
+            c = c.lower()
+        chars.append(c)
+    return ''.join(chars)
+
+
+def snake2camel(string, first_upper=False):
+    """
+    Convert a string to CamelCase, assuming input in snake_case.
+
+    Parameters
+    ----------
+    string : str
+        The string to convert.
+    first_upper : bool
+        Whether or not to capitalize the first letter.
+
+    Returns
+    -------
+    str
+        A string similar to the input, but any underscores removed, and
+        the following letters uppercased.
+    """
+    chars = deque()
+    next_upper = False
+    for c in str(string):
+        if c == '_':
+            next_upper = True
+            continue
+        if next_upper:
+            c = c.upper()
+        chars.append(c)
+        next_upper = False
+    if first_upper:
+        chars[0] = chars[0].upper()
+    return ''.join(chars)
+
+
+def timestamp(t=None):
+    """
+    Return the current or other date and time in the format
+    ``YYYYMMDD_HHMMSS``.
+
+    Parameters
+    ----------
+    t : datetime.datetime or None
+        The date to format. If `None`, use the result of
+        :py:meth:`datetime.datetime.now`.
+
+    Returns
+    -------
+    str
+        The formatted date.
+    """
+    if t is None:
+        t = datetime.now()
+    return t.strftime('%Y%m%d_%H%M%S')

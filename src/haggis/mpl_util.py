@@ -20,6 +20,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 09 Jan 2021: Added set_labels
 
 
 """
@@ -43,7 +44,6 @@ of the module will be present.
 """
 
 
-import math
 from contextlib import contextmanager
 from io import BytesIO
 
@@ -58,7 +58,9 @@ except ImportError:
     _display_missing_extra('plot', 'matplotlib')
     plot_enabled = False
 else:
-    __all__.extend(['figure_context', 'save_figure', 'set_figure_size'])
+    __all__.extend([
+        'figure_context', 'save_figure', 'set_figure_size', 'set_labels'
+    ])
     plot_enabled = True
 
 
@@ -155,3 +157,33 @@ if plot_enabled:
         elif h is None:
             h = w * curr_h / curr_w
         fig.set_size_inches(w, h)
+
+
+    def set_labels(artists, labels):
+        """
+        Assign a separate label to each artist in the iterable.
+
+        Useful in labelling each column separately when plotting a
+        multi-column array. For example::
+
+            from matplotlib import pyplot as plt
+            import numpy as np
+
+            x = np.arange(5)
+            y = np.random.ranint(10, size=(5, 3))
+
+            fig, ax = plt.subplots()
+            set_labels(ax.plot(x, y), 'ABC')
+
+        Based on https://stackoverflow.com/a/64780035/2988730.
+
+        Parameters
+        ----------
+        artists :
+            Iterable of artists. Any extra entries are silently ignored
+            (not labeled).
+        labels :
+            Iterable of strings. Any extra labels are silently dropped.
+        """
+        for artist, label in zip(artists, labels):
+            artist.set_label(label)

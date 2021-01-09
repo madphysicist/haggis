@@ -234,12 +234,12 @@ def open_file(file, *args, **kwargs):
     """
     Return an open file-like object for the input.
 
-    If the input is already a file-like object (not a string or file
-    descriptor), a proxy for it is returned. The original object remains
-    unmodified. The proxy can be used in a context manager, but it will
-    not close the file when exiting.
+    If the input is already a file-like object (not a string, path, or
+    file descriptor), a proxy for it is returned. The original object
+    remains unmodified. The proxy can be used in a context manager, but
+    it will not close the file when exiting.
 
-    Strings and file descriptors are opened using the additional
+    Strings, paths and file descriptors are opened using the additional
     arguments provided. They return a true file object that will close
     itself when used as a context manager.
 
