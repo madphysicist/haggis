@@ -209,7 +209,7 @@ API Docs
 
 .. automodule:: haggis.recipes
    :members:
-   :special-members: __init__, __getitem__
+   :special-members: __init__, __getitem__, __enter__, __exit__
 
 
 ----------------------

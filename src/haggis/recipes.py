@@ -42,20 +42,22 @@ from functools import reduce
 from itertools import chain, combinations, islice, repeat
 from operator import index, or_, and_
 
+try:
+    from contextlib import AbstractContextManager
+except ImportError:
+    class AbstractContextManager:
+        def __enter__(self):
+            return self
 
-class CloseableMixin:
+        def __exit__(self, *args):
+            return None
+
+
+class CloseableMixin(AbstractContextManager):
     """
     Mixin for simple context management for objects with a
     :py:meth:`close` method.
     """
-
-    def __enter__(self):
-        """
-        Simply returns the object.
-
-        Object should be opened elsewhere.
-        """
-        return self
 
     def __exit__(self, *args):
         """
@@ -369,7 +371,7 @@ class KeyedSingleton(type):
 
     def reset(cls):
         """
-        Resets/clears the class's registry so that new isntances will be
+        Resets/clears the class's registry so that new instances will be
         constructed for further calls to `cls`.
         """
         cls._instances.clear()
