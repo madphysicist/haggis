@@ -37,10 +37,10 @@ A small import-guarded block is provided to demo
 .. include:: /link-defs.rst
 """
 
-import subprocess, io
-
-
 __all__ = ['pdftoppm_exe', 'convert_exe', 'pdf_to_image']
+
+
+import subprocess, io
 
 
 #: The name of the :program:`pdftoppm` executable. Either a full path,

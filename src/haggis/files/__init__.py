@@ -28,15 +28,15 @@ The module names in this package generally correspond to the informal
 name of the file type they deal with, or to the extension.
 """
 
+__all__ = [
+    'ensure_extension', 'insert_suffix', 'open_file', 'PreOpenedFile',
+]
+
+
 from os.path import splitext
 
 from ..recipes import is_ordered_subset as _is_ordered_subset
 from ..string_util import check_value
-
-
-__all__ = [
-    'ensure_extension', 'insert_suffix', 'open_file', 'PreOpenedFile',
-]
 
 
 def ensure_extension(name, ext, partial_policy=None, partial_limit=None):

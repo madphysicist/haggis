@@ -31,17 +31,6 @@ versions that start with ``split_``, which accept iterables of lines
 instead of entire strings.
 """
 
-from collections import deque, namedtuple
-from datetime import datetime
-from itertools import chain, repeat
-from math import ceil
-from operator import index
-from os import linesep
-
-from .mapping import option_lookup
-from .recipes import grouper, shift_left
-
-
 __all__ = [
     'hasspace',
     'format_list',
@@ -53,6 +42,17 @@ __all__ = [
     'camel2snake', 'snake2camel',
     'timestamp',
 ]
+
+
+from collections import deque, namedtuple
+from datetime import datetime
+from itertools import chain, repeat
+from math import ceil
+from operator import index
+from os import linesep
+
+from .mapping import option_lookup
+from .recipes import grouper, shift_left
 
 
 def hasspace(x):

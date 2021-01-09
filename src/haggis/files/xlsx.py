@@ -42,12 +42,12 @@ module will be present.
 .. include:: /link-defs.rst 
 """
 
+__all__ = ['xlsx_enabled', 'EXTENSION', 'ensure_extension',]
+
+
 from warnings import warn
 
 from . import ensure_extension as _ensure_extension
-
-
-__all__ = ['xlsx_enabled', 'EXTENSION', 'ensure_extension',]
 
 
 try:

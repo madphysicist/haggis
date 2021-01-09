@@ -42,10 +42,10 @@ module will be present.
 .. include:: /link-defs.rst 
 """
 
-import os, tempfile, warnings
-
-
 __all__ = ['fits_enabled']
+
+
+import os, tempfile, warnings
 
 
 try:

@@ -47,13 +47,13 @@ which are referenced as appropriate.
 .. include:: /link-defs.rst 
 """
 
-from collections import OrderedDict
-from os.path import dirname, join
-import re
-
 
 __all__ = ['docx_enabled',]
 
+
+from collections import OrderedDict
+from os.path import dirname, join
+import re
 
 try:
     from docx.document import Document
