@@ -132,7 +132,7 @@ class NumpyObject(JSONObject):
             self.printopts.update(printopts)
         else:
             self.printopts = self._PRINTOPTS
-        printopts.pop('prefix', None)
+        self.printopts.pop('prefix', None)
 
     def format(self, file, obj, prefix, indent):
         """
