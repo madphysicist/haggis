@@ -290,7 +290,7 @@ if os_name == 'nt':
 else:
     def add_dll_directory(*args, **kwargs):
         return CloseableMixin()
-    _close_dll_handle = CDLL('').dlclose()
+    _close_dll_handle = CDLL('').dlclose
     _close_dll_handle.argtypes = [c_void_p]
     _close_dll_handle.restype = c_int
     _close_dll_handle.errcheck = check_zero(

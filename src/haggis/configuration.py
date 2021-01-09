@@ -26,7 +26,9 @@ Recipes for handling different types of configuration files.
 """
 
 
-__all__ = ['JSONConfiguration']
+__all__ = [
+    'JSONConfiguration', 'JSONObject', 'NumpyObject', '_json_registry'
+]
 
 
 from collections.abc import Mapping
@@ -124,7 +126,7 @@ class NumpyObject(JSONObject):
             allowed, except ``'prefix'``. The default is to use the
             builtin formatting spec.
         """
-        super().__init(type=np.ndarray)
+        super().__init__(type=np.ndarray)
         if printopts:
             self.printopts = self._PRINTOPTS.copy()
             self.printopts.update(printopts)
@@ -161,12 +163,12 @@ class _JSONRegistry(list):
 #:
 #: An instance of :py:class:`NumpyObject` with default parameters is
 #: registered automatically.
-_registry = _JSONRegistry()
+_json_registry = _JSONRegistry()
 
 del _JSONRegistry
 
 
-_registry.register(NumpyObject())
+_json_registry.register(NumpyObject())
 
 
 class JSONConfiguration(Namespace):
@@ -433,7 +435,7 @@ class JSONConfiguration(Namespace):
             elif isinstance(e, (dict, Namespace)):
                 pprint_object(e, spaces + ' ' * indent)
             else:
-                for reg in _registry:
+                for reg in _json_registry:
                     if isinstance(e, reg.type):
                         reg.format(f, e, spaces, indent)
                         break
