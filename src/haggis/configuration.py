@@ -194,7 +194,7 @@ class JSONConfiguration(Namespace):
     intended to reduce the probablility of shadowing a configuration
     key.
     """
-    __slots__ = ('__dict__', '_source')
+    __slots__ = ('_source',)
 
     def __init__(self, source):
         """
