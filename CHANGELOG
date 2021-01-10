@@ -1,6 +1,24 @@
 Changelog
 =========
 
+0.1.a2 (2021-01-09)
+-------------------
+
+* Major additions to API
+* New modules:
+  - threads
+  - configuration
+  - structures
+  - mapping
+  - ctypes_util
+* API changes:
+  - Moved half of recipes to mapping
+  - Added CloseableMixin to recipes
+  - Updates Namespace, (now in mapping)
+  - Added to_hex, camel2snake, snake2camel, timestamp to string_util
+  - Added set_labels to mpl_utils
+
+
 0.1a1.dev1 (2019-04-13)
 -----------------------
 
@@ -9,4 +27,3 @@ Changelog
 * Only code required for imprint present initially.
 * Documentation 90% complete.
 * No tests worth speaking of.
-
