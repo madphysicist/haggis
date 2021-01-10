@@ -645,14 +645,19 @@ class Namespace:
     supports a dictionary-like interface for elements whose names are not
     valid python identifiers, or are shadowed by descriptors.
 
-    This class originated with :py:class:`argparse.Namespace` and
-    :py:class:`types.SimpleNamespace`.
+    This class originated with :py:class:`types.SimpleNamespace` and
+    :py:class:`argparse.Namespace`.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Create a new namespace with the specified named arguments.
+
+        Key-value pairs in each iterable of `args` are added in order,
+        followed by the mapping `kwargs`.
         """
+        for arg in args:
+            self.__dict__.update(arg)
         self.__dict__.update(kwargs)
 
     def __contains__(self, name):
@@ -738,9 +743,17 @@ class Namespace:
 
     def get(self, key, default=None):
         """
-        A dict-like get operation on the namespace's mapping.
+        :py:class:`dict`-like :py:meth:`~dict.get` operation on the
+        namespace's mapping.
         """
         return self.__dict__.get(key, default)
+
+    def setdefault(self, key, value):
+        """
+        :py:class:`dict`-like :py:meth:`~dict.setdefault` operation on
+        the namespace's mapping.
+        """
+        return self.__dict__.setdefault(key, value)
 
     def items(self):
         """
