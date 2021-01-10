@@ -484,7 +484,9 @@ class JSONConfiguration(Namespace):
                         reg.format(f, e, spaces, indent)
                         break
                 else:
-                    raise TypeError("Don't know how to encode {type(e).__name__}")
+                    raise TypeError("Don't know how to encode {}".format(
+                        type(e).__name__
+                    ))
 
         def esc(s):
             return s.replace('\\', '\\\\')
