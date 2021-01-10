@@ -14,7 +14,7 @@ Changelog
 * API changes:
   - Moved half of recipes to mapping
   - Added CloseableMixin to recipes
-  - Updates Namespace, (now in mapping)
+  - Updated Namespace, (in mapping), added setdefaults
   - Added to_hex, camel2snake, snake2camel, timestamp to string_util
   - Added set_labels to mpl_utils
 
