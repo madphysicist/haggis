@@ -32,6 +32,7 @@ __all__ = [
 
 
 from collections.abc import Mapping
+from io import StringIO
 from json import load
 from numbers import Number
 from os import replace, sep
@@ -223,6 +224,19 @@ class JSONConfiguration(Namespace):
         else:
             f = repr(self._source)
         return '{}({})'.format(type(self).__name__, f)
+
+    def __str__(self):
+        """
+        A detailed, expanded, representation of this configuration.
+
+        Returns
+        -------
+        str :
+            A string containing the contents of this mapping.
+        """
+        s = StringIO()
+        self._pprint(s)
+        return s.getvalue()
 
     def _reload(self, source=None):
         """
