@@ -645,8 +645,8 @@ class Namespace:
     supports a dictionary-like interface for elements whose names are not
     valid python identifiers, or are shadowed by descriptors.
 
-    This class originated with :py:class:`types.SimpleNamespace` and
-    :py:class:`argparse.Namespace`.
+    This class originated with :py:class:`argparse.Namespace` and
+    :py:class:`types.SimpleNamespace`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -681,9 +681,7 @@ class Namespace:
         """
         Returns a usable string representation of this namespace.
         """
-        items = ', '.join('{}={!r}'.format(*item)
-                          for item in vars(self).items())
-        return '{}({})'.format(type(self).__name__, items)
+        return '{}({!r})'.format(type(self).__name__, self.__dict__)
 
     def __getitem__(self, key):
         """
