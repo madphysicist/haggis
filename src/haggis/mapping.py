@@ -641,9 +641,11 @@ class Namespace:
     A simple namespace object.
 
     The class is mutable. It implements containment checks. It can be
-    converted to a dictionary using :py:func:`vars`.
+    converted to a dictionary using :py:func:`vars`. That being said, it
+    supports a dictionary-like interface for elements whose names are not
+    valid python identifiers, or are shadowed by descriptors.
 
-    This class is based heavily on :py:class:`argparse.Namespace` and
+    This class originated with :py:class:`argparse.Namespace` and
     :py:class:`types.SimpleNamespace`.
     """
 
@@ -678,11 +680,67 @@ class Namespace:
                           for item in vars(self).items())
         return '{}({})'.format(type(self).__name__, items)
 
+    def __getitem__(self, key):
+        """
+        Retrieve an item directly from the dictionary.
+
+        Useful for items whose names are not valid python identifiers.
+
+        Parameters
+        ----------
+        key :
+            The key of the object to retreive. Does not have to be a
+            string.
+
+        Return
+        ------
+        object :
+            The value mapped to the specified key. Raises an error if
+            the key is not found.
+        """
+        return self.__dict__[key]
+
+    def __setitem__(self, key, value):
+        """
+        Set an item directly into the dictionary.
+
+        Useful for items whose names are not valid python identifiers.
+
+        Parameters
+        ----------
+        key :
+            The key of the object to retreive. Does not have to be a
+            string.
+        value :
+            The value mapped to the specified key.
+        """
+        self.__dict__[key] = value
+
+    def __delitem__(self, key):
+        """
+        Delete a mapping directly from the dictionary.
+
+        Useful for items whose names are not valid python identifiers.
+
+        Parameters
+        ----------
+        key :
+            The key of the mapping to delete. Does not have to be a
+            string.
+        """
+        del self.__dict__[key]
+
     def __len__(self):
         """
         The number of items in this namespace.
         """
         return len(self.__dict__)
+
+    def get(self, key, default=None):
+        """
+        A dict-like get operation on the namespace's mapping.
+        """
+        return self.__dict__.get(key, default)
 
     def items(self):
         """
@@ -729,4 +787,3 @@ class Namespace:
             Namespace(b=2, a=1)
         """
         return _NamespaceOverrideContext(self, **kwargs)
-
