@@ -36,10 +36,11 @@ from json import load
 from numbers import Number
 from os import replace, sep
 from os.path import isfile
-from sys import maxsize
+from sys import maxsize, stdout
 
 import numpy as np
 
+from .files import open_file
 from .mapping import Namespace
 
 
@@ -206,11 +207,7 @@ class JSONConfiguration(Namespace):
             If a mapping type, use to update the instance
             dictionary directly. Otherwise assume filename or path.
         """
-        self._source = source
-        if isinstance(self._source, Mapping):
-            self.__dict__.update(self._source)
-        else:
-            self.reload()
+        self._reload(source)
 
     def __repr__(self):
         """
@@ -298,7 +295,36 @@ class JSONConfiguration(Namespace):
                 replace(source, source + '.bak')
             self._pprint(source)
 
-    def _pprint(self, filename, *, indent=4, root_indent=False, linewidth=120,
+    def _check_path(self, *keys):
+        """
+        Ensure that a given sequence of nested namespaces exists in
+        this namespace.
+
+        All keys in the sequence besides the last one must contain a
+        mutable :py:attr:`~object.__dict__`. If the last item in the
+        sequence does not exist, it will be created as a
+        :py:class:`~haggis.mapping.Namespace`.
+
+        Parameters
+        ----------
+        *keys :
+            Sequence of keys to verify. Any missing keys will be
+            created as empty namespaces. An error will be raised if
+            an intermediate object exists without a mutable `__dict__`.
+
+        Return
+        ------
+        The object at the end of the chain. If `keys` is empty, returns
+        the current object.
+        """
+        obj = self
+        for key in keys:
+            if key not in obj.__dict__:
+                obj.__dict__[key] = Namespace()
+            obj = obj.__dict__[key]
+        return obj
+
+    def _pprint(self, filename=None, *, indent=4, root_indent=False, linewidth=120,
                 float_format='', int_format='', bool_format=True,
                 bytes_format='utf-8'):
         """
@@ -310,6 +336,10 @@ class JSONConfiguration(Namespace):
 
         Parameters
         ----------
+        filename : str or Path or file-like
+            The file to write to. If an open file, must have write
+            permissions. If a string or path, will be truncated or
+            created (using ``'w'`` mode).
         indent : int
             The number of spaces to indent nested objects by. Default 4.
         root_indent : bool
@@ -369,7 +399,7 @@ class JSONConfiguration(Namespace):
             multiline = (
                 any(map(iscontainer, arr)) or
                 sum(map(strlen, arr)) + 2 * len(arr) +
-                                        len(more_spaces()) > linewidth
+                                        len(more_spaces) > linewidth
             )
 
             if multiline:
@@ -445,5 +475,5 @@ class JSONConfiguration(Namespace):
         def esc(s):
             return s.replace('\\', '\\\\')
 
-        with open(filename, 'w') as f:
+        with open_file(filename or stdout, 'w') as f:
             pprint_object(self, ' ' * indent * root_indent)
