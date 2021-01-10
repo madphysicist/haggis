@@ -32,7 +32,7 @@ documentation, and other sources like Stack Overflow.
 
 __all__ = [
     'dict_merge', 'dict_select', 'mapping_context', 'Namespace',
-    'option_lookup', 'RecursiveDict',
+    'option_lookup', 'RecursiveDict', 'setdefaults',
 ]
 
 
@@ -40,6 +40,7 @@ from collections.abc import Mapping
 from warnings import warn
 
 from .exceptions import ErrorTransform
+from .recipes import consume
 
 
 def dict_select(dic, keys=None, exclude=None, extra='ignore'):
@@ -157,6 +158,45 @@ def dict_merge(parent, child, keys=None, exclude=None, key=None):
         value = child
 
     return value, selection
+
+
+def setdefaults(mapping, *args, **kwargs):
+    """
+    Update missing keys in this mapping based on supplied iterables and
+    mappings.
+
+    This is similar to :py:meth:`dict.update`, except that only missing
+    keys are added.
+
+    Parameters
+    ----------
+    mapping :
+        The dictionary to update. If the type does not have a
+        `setdefault` method, the udpate will default to using
+        `__contains__` and `__setitem__` directly.
+    *args :
+        Each positional arguments may be a mapping or an iterable of
+        two-element iterables. Iterables are applied in order. Only the
+        first instance of a duplicated key is ever considered.
+    **kwargs : TYPE
+        Any additional keywords to insert. These are applied after the
+        iterables, if any.
+    """
+    # Find suitable setdefault implementation
+    if hasattr(mapping, 'setdefault') and callable(mapping.setdefault):
+        func = mapping.setdefault
+    else:
+        def func(key, default):
+            if not key in mapping:
+                ret = mapping[key] = default
+            else:
+                ret = mapping[key]
+            # For correctness
+            return ret
+
+    for arg in args:
+        consume(map(func, arg))
+    consume(map(func, kwargs.items()))
 
 
 class RecursiveDict(dict):
