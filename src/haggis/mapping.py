@@ -37,6 +37,7 @@ __all__ = [
 
 
 from collections.abc import Mapping
+from itertools import starmap
 from warnings import warn
 
 from .exceptions import ErrorTransform
@@ -195,8 +196,10 @@ def setdefaults(mapping, *args, **kwargs):
             return ret
 
     for arg in args:
-        consume(map(func, arg))
-    consume(map(func, kwargs.items()))
+        if isinstance(arg, Mapping):
+            arg = arg.items()
+        consume(starmap(func, arg))
+    consume(starmap(func, kwargs.items()))
 
 
 class RecursiveDict(dict):
@@ -442,10 +445,12 @@ def option_lookup(name, mapping, option, key_func=None, value_func=None,
         If multiple types are to be expected, a :py:class:`tuple` of
         types may be supplied. Defaults to :py:exc:`KeyError`.
     """
-    key = option if key_func is None else key_func(option)
     with ErrorTransform(key_err, err_type, 'Invalid value for `{0}`: {1!r}',
                         name, option):
+        key = option if key_func is None else key_func(option)
         value = mapping[key]
+    # This is not in the exception handler because its your own fault:
+    # Option can be anything since its user supplied, but not mapping values
     if value_func is not None:
         value = value_func(option, key, value)
     return value
