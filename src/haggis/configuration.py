@@ -27,7 +27,7 @@ Recipes for handling different types of configuration files.
 
 
 __all__ = [
-    'JSONConfiguration', 'JSONObject', 'NumpyObject', '_json_registry'
+    'JSONConfiguration', 'JSONObject', 'NumpyObject', 'json_registry'
 ]
 
 
@@ -43,6 +43,8 @@ import numpy as np
 
 from .files import open_file
 from .mapping import Namespace
+from .recipes import islast
+from .structures import Trie
 
 
 class JSONObject:
@@ -152,25 +154,39 @@ class _JSONRegistry(list):
 
 
 #: A list-like object with an additional
-#: :py:meth:`~_registry.register` method.
+#: :py:meth:`~json_registry.register` method.
 #:
-#: .. py:method:: _registry.register(formatter: JSONObject)
+#: .. py:method:: json_registry.register(formatter: JSONObject)
 #:
 #:    Call this function to add output types to be used with
 #:    :py:meth:`JSONConfiguration._pprint`.
 #:
-#: .. py:method:: _registry.clear()
+#: .. py:method:: json_registry.clear()
 #:
 #:    Call this function to clear the registry.
 #:
 #: An instance of :py:class:`NumpyObject` with default parameters is
 #: registered automatically.
-_json_registry = _JSONRegistry()
+json_registry = _JSONRegistry()
 
 del _JSONRegistry
 
 
-_json_registry.register(NumpyObject())
+json_registry.register(NumpyObject())
+
+
+def _make_trie(iterable):
+    """
+    Add all the items in `iterable` into a
+    :py:class:`~haggis.structures.Trie`. Hashable elements are treated
+    as single top-level leaves. Lists are treated as nested items.
+    """
+    t = Trie()
+    for item in iterable:
+        if not isinstance(item, list):
+            item = [item]
+        t.add(item)
+    return t
 
 
 class JSONConfiguration(Namespace):
@@ -272,7 +288,7 @@ class JSONConfiguration(Namespace):
 
         self.__dict__.update(emplace(data))
 
-    def _update(self, source=None):
+    def _update(self, source=None, *exclude):
         """
         Write the dictionary back to the file or original mapping.
 
@@ -288,26 +304,32 @@ class JSONConfiguration(Namespace):
             If provided, supplies a non-default destination for the
             namespace, but does not permanently replace
             :py:attr:`_source`. The default is `None`.
+        *exclude :
+            sequence of keys to exclude. Hashable types are keys in the
+            current dictionary. Lists indicate multi-level keys. For
+            example, to avoid printing ``self.a.b``, add an exclude
+            ``['a', 'b']``.
         """
         if not source:
             source = self._source
 
         if isinstance(source, Mapping):
-            def unplace(d):
+            exclude = _make_trie(exclude)
+            def unplace(prefix, d):
                 for k, v in d.items():
+                    item = prefix + [k]
+                    if item in exclude:
+                        continue
                     if isinstance(v, Namespace):
-                        v = dict(unplace(v.__dict__))
+                        v = dict(unplace(item, v.__dict__))
                     yield k, v
             source.clear()
-            source.update(unplace(self.__dict__))
+            source.update(unplace([], self.__dict__))
         else:
             if isfile(source):
-                if isinstance(source, (bytes, bytearray)):
-                    source = source.decode('utf-8')
-                else:
-                    source = str(source)
-                replace(source, source + '.bak')
-            self._pprint(source)
+                end = b'.bak' if isinstance(source, (bytes, bytearray)) else '.bak'
+                replace(source, source + end)
+            self._pprint(source, exclude=exclude)
 
     def _check_path(self, *keys):
         """
@@ -340,13 +362,14 @@ class JSONConfiguration(Namespace):
 
     def _pprint(self, filename=None, *, indent=4, root_indent=False, linewidth=120,
                 float_format='', int_format='', bool_format=True,
-                bytes_format='utf-8'):
+                bytes_format='utf-8', exclude=()):
         """
         Pretty print the configuration into a file.
 
         All arguments besides the file name are keyword-only. Output
         formats for additional datatypes besides the normal JSON types
-        are supported by registering :py:
+        are supported by registering :py:class:`JSONObject` descriptors
+        using :py:meth:`json_registry.register`.
 
         Parameters
         ----------
@@ -366,6 +389,10 @@ class JSONConfiguration(Namespace):
             Name of the encoding to use to convert byte arrays to
             string. If `None`, record byte arrays as arrays of
             hexadecimal integers.
+        exclude : iterable
+            An iterable of items to exclude from the printout. Hashable
+            elements are interpreted as top-level keys. Nested elements
+            must be specified as a list of keys.
         """
         def iscontainer(e):
             return isinstance(e, (dict, list, tuple, np.ndarray))
@@ -379,7 +406,7 @@ class JSONConfiguration(Namespace):
                 return len(e.decode(bytes_format))
             return 0
 
-        def pprint_object(obj, spaces):
+        def pprint_object(obj, key, spaces):
             """
             Spaces is the indented number of spaces!
 
@@ -387,24 +414,22 @@ class JSONConfiguration(Namespace):
             all the other elements have correct indentation.
             """
             f.write('{\n')
-            i = iter(obj.items())
-            # Iteration has to be like this or the last item gets lost!
-            for _, item in zip(range(len(obj) - 1), i):
-                pprint_item(*item, spaces)
-                f.write(',\n')
-            pprint_item(*next(i), spaces)
+            if key is None:
+                iterator = obj.items()
+            else:
+                iterator = ((k, v) for k, v in obj.items() \
+                                            if key + [k] not in exclude)
+            for last, (k, v) in islast(iterator):
+                f.write(spaces)
+                f.write('"' + str(k) + '":')
+                f.write(' ')
+
+                pprint_element(v, None if key is None else key + [k], spaces)
+                if not last:
+                    f.write(',\n')
+
             spaces = '' if len(spaces) <= indent else spaces[:-indent]
             f.write('\n' + spaces + '}')
-
-        def pprint_item(key, val, spaces):
-            f.write(spaces)
-            f.write('"' + key + '":')
-            if not isinstance(val, np.ndarray):
-                f.write(' ')
-            pprint_element(val, spaces)
-
-        def array_multiline(arr, indent, linewidth):
-            return  
 
         def pprint_array(arr, spaces):
             more_spaces = spaces + ' ' * indent
@@ -426,13 +451,11 @@ class JSONConfiguration(Namespace):
             comma = ',' + suffix
 
             f.write(suffix)
-            for i in range(len(arr) - 1):
+            for last, e in islast(arr):
                 f.write(prefix)
-                pprint_element(arr[i], more_spaces)
-                f.write(comma)
-            if arr:
-                f.write(prefix)
-                pprint_element(arr[-1], more_spaces)
+                pprint_element(e, None, more_spaces)
+                if not last:
+                    f.write(comma)
             f.write(suffix + spaces + ']')
 
         def pprint_bytes(arr, spaces):
@@ -449,13 +472,13 @@ class JSONConfiguration(Namespace):
             comma = ',' + suffix
 
             f.write(suffix)
-            for i in range(len(arr) - 1):
-                f.write(prefix + '{:%0.2X}'.format(arr[i]) + comma)
-            if arr:
-                f.write(prefix + '{:%0.2X}'.format(arr[-1]))
+            for last, b in arr:
+                f.write(prefix + '{:%0.2X}'.format(b))
+                if not last:
+                    f.write(comma)
             f.write(suffix + spaces + ']')
 
-        def pprint_element(e, spaces):
+        def pprint_element(e, key, spaces):
             if e is None:
                 f.write('null')
             elif isinstance(e, bool):
@@ -477,19 +500,20 @@ class JSONConfiguration(Namespace):
             elif isinstance(e, (list, tuple)):
                 pprint_array(e, spaces)
             elif isinstance(e, (dict, Namespace)):
-                pprint_object(e, spaces + ' ' * indent)
+                pprint_object(e, key, spaces + ' ' * indent)
             else:
-                for reg in _json_registry:
+                for reg in json_registry:
                     if isinstance(e, reg.type):
                         reg.format(f, e, spaces, indent)
                         break
                 else:
-                    raise TypeError("Don't know how to encode {}".format(
-                        type(e).__name__
-                    ))
+                    raise TypeError(
+                        "Don't know how to encode {}".format(type(e).__name__)
+                    )
 
         def esc(s):
             return s.replace('\\', '\\\\')
 
+        exclude = _make_trie(exclude)
         with open_file(filename or stdout, 'w') as f:
-            pprint_object(self, ' ' * indent * root_indent)
+            pprint_object(self, [], ' ' * indent * root_indent)
