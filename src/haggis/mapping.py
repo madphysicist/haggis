@@ -178,7 +178,7 @@ def setdefaults(mapping, *args, **kwargs):
         Each positional arguments may be a mapping or an iterable of
         two-element iterables. Iterables are applied in order. Only the
         first instance of a duplicated key is ever considered.
-    **kwargs : TYPE
+    **kwargs :
         Any additional keywords to insert. These are applied after the
         iterables, if any.
     """

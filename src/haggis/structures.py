@@ -62,7 +62,7 @@ class _TrieNode:
        their :py:attr:`key` attribute. May be `None` to indicate an
        empty node.
     """
-    __slots__ = ('key', 'parent', 'isleaf', 'children')
+    __slots__ = ('key', 'parent', 'isleaf', 'suffixes')
 
     def __init__(self, key, parent, isleaf=False):
         """
@@ -173,9 +173,9 @@ class _TrieNode:
         """
         if self.isempty:
             self.suffixes = {}
-        if key not in self.children:
-            self.children[key] = type(self)(key, self)
-        return self.children[key]
+        if key not in self.suffixes:
+            self.suffixes[key] = type(self)(key, self)
+        return self.suffixes[key]
 
     def __delitem__(self, key):
         """
@@ -363,9 +363,9 @@ class Trie:
         """
         node = self.root
         for elem in item:
-            if not node.has(elem):
+            if not elem in node:
                 return False
-            node = node.get(elem)
+            node = node[elem]
         return node.isleaf
 
     def __iter__(self):
@@ -468,7 +468,7 @@ class Trie:
         sorter : callable, optional
             A replacement sorter. The default is :py:func:`sorted`, which
             implies case sensitivity.
-        joiner : TYPE, optional
+        joiner : callable, optional
             A replacement joiner. The default joiner handles
             concatenation with the correct path separator, and proper
             identification of absolute and relative paths.
@@ -494,5 +494,3 @@ class Trie:
                     prefix = [root, first]
                 return sep.join(chain(prefix, parts))
         return cls(empty='', sorter=sorter, joiner=joiner)
-
-
