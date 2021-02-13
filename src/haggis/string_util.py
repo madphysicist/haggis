@@ -20,6 +20,7 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
 # Version: 09 Jan 2021: Added to_hex, camel2snake, snake2camel, timestamp
+# Version: 11 Feb 2021: Moved timestamp to module time
 
 
 """
@@ -40,12 +41,10 @@ __all__ = [
     'check_value',
     'to_casefold', 'to_lower', 'to_upper', 'to_hex',
     'camel2snake', 'snake2camel',
-    'timestamp',
 ]
 
 
 from collections import deque, namedtuple
-from datetime import datetime
 from itertools import chain, repeat
 from math import ceil
 from operator import index
@@ -852,24 +851,3 @@ def snake2camel(string, first_upper=False):
     if first_upper:
         chars[0] = chars[0].upper()
     return ''.join(chars)
-
-
-def timestamp(t=None):
-    """
-    Return the current or other date and time in the format
-    ``YYYYMMDD_HHMMSS``.
-
-    Parameters
-    ----------
-    t : datetime.datetime or None
-        The date to format. If `None`, use the result of
-        :py:meth:`datetime.datetime.now`.
-
-    Returns
-    -------
-    str
-        The formatted date.
-    """
-    if t is None:
-        t = datetime.now()
-    return t.strftime('%Y%m%d_%H%M%S')

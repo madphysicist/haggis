@@ -237,3 +237,12 @@ API Docs
 .. automodule:: haggis.threads
    :members:
    :special-members: __init__
+
+
+---------------
+``time`` module
+---------------
+
+.. automodule:: haggis.time
+   :members:
+   :special-members: __init__, __enter__, __exit__, __str__
