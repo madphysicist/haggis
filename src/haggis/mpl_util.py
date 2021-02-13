@@ -21,6 +21,7 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
 # Version: 09 Jan 2021: Added set_labels
+# Version: 11 Feb 2021: Added show_extents
 
 
 """
@@ -59,7 +60,8 @@ except ImportError:
     plot_enabled = False
 else:
     __all__.extend([
-        'figure_context', 'save_figure', 'set_figure_size', 'set_labels'
+        'figure_context', 'save_figure', 'set_figure_size', 'set_labels',
+        'show_extents',
     ])
     plot_enabled = True
 
@@ -187,3 +189,74 @@ if plot_enabled:
         """
         for artist, label in zip(artists, labels):
             artist.set_label(label)
+
+
+    def show_extents(img, x=None, y=None, ax=None, **kwargs):
+        """
+        Display an image with the correct x- and y- coordinates,
+        adjusted to pixel centers.
+
+        This function is a wrapper around
+        :py:func:`~matplotlib.axes.Axes.imshow`. Normally, ``imshow``
+        will scale the axes limits to the outer edges of the image
+        when given an ``extent`` argument. However, it is generally
+        more accurate to set the centers of the pixels.
+
+        Parameters
+        ----------
+        img :
+            The image to display.
+        x : array-like, optional
+            The x-coordinates of the pixels. Only the first and last
+            coordinate are ever used, so it is safe to pass in any
+            sequence of two numbers. ``x[0]`` is the intended
+            x-coordinate of the center of the leftmost column of the
+            image, while ``x[-1]`` is the x-coordinate of the center of
+            the rightmost column.
+
+            Defaults to ``[0, img.shape[1] - 1]``.
+        y : array-like, optional
+            The y-coordinates of the pixels. Only the first and last
+            coordinate are ever used, so it is safe to pass in any
+            sequence of two numbers. ``y[0]`` is the intended
+            y-coordinate of the center of the topmost row of the image,
+            while ``y[-1]`` is the y-coordinate of the center of
+            the bottommost column.
+
+            Defaults to ``[0, img.shape[0] - 1]``.
+        ax : matplotlib.axes.Axes, optional
+            The axes to plot on. If not supplied, a new figure and axes
+            are created.
+        **kwargs :
+            All remaining arguments are passed through to
+            :py:func:`~matplotlib.axes.Axes.imshow`. If an explicit
+            ``extent`` is passed in, ``x`` and ``y`` will be ignored.
+
+        Return
+        ------
+        image : matplotlib.image.AxesImage
+            The image object created by
+            :py:func:`~matplotlib.axes.Axes.imshow`.
+        """
+        if ax is None:
+            _, ax = plt.subplots()
+
+        if 'extent' in kwargs:
+            extent = kwargs.pop('extent')
+        else:
+            if x is None:
+                x = [0, img.shape[1] - 1]
+            else:
+                x = np.asanyarray(x).ravel()
+            if y is None:
+                y = [0, img.shape[0] - 1]
+            else:
+                y = np.asanyarray(y).ravel()
+
+            dx = 0.5 * (x[-1] - x[0]) / (img.shape[1] - 1)
+            dy = 0.5 * (x[-1] - x[0]) / (img.shape[0] - 1)
+            extent = [x[0] - dx, x[-1] + dx,
+                      y[-1] + dy, y[0] - dy]
+
+        return ax.imshow(img, extent=extent, **kwargs)
+

@@ -19,6 +19,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 11 Feb 2021: Added package_root
 
 
 """
@@ -35,8 +36,38 @@ from types import FunctionType, ModuleType
 
 
 __all__ = [
-    'HiddenPropMeta', 'update_module', 'copy_func', 'copy_class'
+    'HiddenPropMeta', 'package_root', 'update_module',
+    'copy_func', 'copy_class'
 ]
+
+
+def package_root(module):
+    """
+    Find the directory containing the root package in which a module is
+    defined.
+
+    Only works for modules with a valid ``__file__`` attribute.
+
+    Parameters
+    ----------
+    module : str or ~types.ModuleType
+        The module to investigate. If a name is passed in, the module
+        must exist in :py:attr:`sys.modules`.
+
+    Return
+    ------
+    path : str
+        The root path of the package containing the module.
+    """
+    if isinstance(module, str):
+        module = sys.modules[module]
+    name = module.__name__
+    path = module.__file__
+    if basename(path) == '__init__.py':
+        path = dirname(path)
+    for _ in range(name.count('.') + 1):
+        path = dirname(path)
+    return path
 
 
 def update_module(current, other, recurse=False):

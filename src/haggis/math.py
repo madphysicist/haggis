@@ -20,6 +20,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 11 Feb 2021: Added mask2runs andruns2mask
 
 
 """
@@ -36,8 +37,8 @@ from .mapping import option_lookup
 
 __all__ = [
         'ang_diff_abs', 'ang_diff_min', 'ang_diff_pos', 'count_divisors',
-        'ellipse', 'first_primes', 'full_width_half_max', 'primes_up_to',
-        'real_divide', 'round_sig',
+        'ellipse', 'first_primes', 'full_width_half_max', 'mask2runs',
+        'primes_up_to', 'real_divide', 'round_sig', 'runs2mask',
 ]
 
 
@@ -500,3 +501,81 @@ def ang_diff_abs(theta1, theta2, full=2.0 * numpy.pi):
         difference of the two inputs.
     """
     return numpy.abs(ang_diff_min(theta1, theta2, full))
+
+
+def mask2runs(mask, return_lengths=False, return_borders=False):
+    """
+    Find the runs in a boolean mask.
+
+    Parameters
+    ----------
+    mask : array-like
+        Boolean mask. If not boolean, will be cast to bool.
+    return_lengths : bool, optional
+        Whether or not to return an array of lengths for each run.
+    return_borders : bool, optional
+        Whether or not to return an array of dtype `np.int8` containing
+        1 at each run start and -1 past run ends. The default is False.
+
+    Returns
+    -------
+    regions : numpy.ndarray (2, N)
+        Array of indices for each run. First column is the location of
+        the run start, second column is past the run end.
+    borders : numpy.ndarray (mask.shape)
+        Array of :py:obj:`numpy.int8` containing 1 at each run start,
+        -1 past each run end, and zero elsewhere. Only returned if
+        ``return_borders`` is `True`. ``np.cumsum(borders).view(bool)``
+        is equivalent to ``mask``.
+    """
+    mask = np.asanyarray(mask).astype(bool, copy=False)
+    borders = np.diff(np.r_[np.int8(0), mask.view(np.int8), np.int8(0)])
+    indices = np.flatnonzero(borders).reshape(-1, 2)
+
+    if return_lengths:
+        lengths = np.diff(indices, axis=1).ravel()
+        if return_borders:
+            return indices, lengths, borders
+        return indices, lengths
+    elif return_borders:
+        return indices, borders
+    return indices
+
+
+def runs2mask(runs, n=None):
+    """
+    Convert an Nx2 array of run indices, such as the return of
+    :py:func:`mask2runs` into a boolean mask of size `n`.
+
+    Parameters
+    ----------
+    runs : array-like
+        A two-column array, the first column being inclusive start
+        indices for each run, and the second being exclusive stop
+        indices.
+    n : int, optional
+        The size of the mask to generate. If missing (None), the
+        end of the last run is assumed (``runs[-1, 1]``).
+
+    Return
+    ------
+    mask : numpy.ndarray
+        A boolean array of length ``n`` with runs set to True.
+    """
+    runs = np.asanyarray(runs)
+    if n is None:
+        n = runs[-1, 1]
+    mask = np.zeros(n, dtype=np.bool)
+    view = mask.view(np.int8)
+
+    # Assign start indices
+    view[runs[:, 0]] = 1
+
+    # Assign end indices
+    ends = runs[:, 1]
+    if ends[-1] == n:
+        ends = ends[:-1]
+    view[ends] = -1
+
+    np.cumsum(view, out=view)
+    return mask
