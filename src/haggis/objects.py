@@ -31,6 +31,7 @@ functions, and automatically creating properties.
 
 from copy import copy
 from functools import update_wrapper, WRAPPER_ASSIGNMENTS
+from os.path import basename, dirname
 import sys
 from types import FunctionType, ModuleType
 
