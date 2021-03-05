@@ -21,6 +21,7 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
 # Version: 11 Feb 2021: Added mask2runs andruns2mask
+# Version: 05 Mar 2021: Added rms
 
 
 """
@@ -38,7 +39,8 @@ from .mapping import option_lookup
 __all__ = [
         'ang_diff_abs', 'ang_diff_min', 'ang_diff_pos', 'count_divisors',
         'ellipse', 'first_primes', 'full_width_half_max', 'mask2runs',
-        'primes_up_to', 'real_divide', 'round_sig', 'runs2mask', 'threshold',
+        'primes_up_to', 'real_divide', 'rms', 'round_sig', 'runs2mask',
+        'threshold',
 ]
 
 
@@ -79,8 +81,8 @@ def ellipse(*args, num_points=1e3, **kwargs):
     counterclockwise about ``(h, k)``.
 
     The number of points is specified by `numPoints`. Points are evenly
-    distributed by angle, not by arc-length (unless the ellipse is a circle).
-    The default number of points is 1000.
+    distributed by angle, not by arc-length (unless the ellipse is a
+    circle). The default number of points is 1000.
 
     Return
     ======
@@ -106,9 +108,8 @@ def ellipse(*args, num_points=1e3, **kwargs):
         if len(args) == 6:
             a, b, c, d, e, f = args
         if kwargs:
-            raise ValueError(
-                'Only num_points can be a keyword for quadratic form of ellipse'
-            )
+            raise ValueError('Only num_points can be a keyword '
+                             'for quadratic form of ellipse')
 
         discriminant = b**2 - 4 * a * c
         if discriminant >= 0.0:
@@ -184,10 +185,10 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
 
     Normally, a single scalar is returned. If `return_points` is
     :py:obj:`True`, however, two two-element tuples are returned as the
-    second and third argument. Each tuple will contain an x-y pair of the
-    intersection coordinates used to approximate the main return value.
-    The first tuple will be for the left (rising) edge and the second
-    will be for the right (trailing) edge.
+    second and third argument. Each tuple will contain an x-y pair of
+    the intersection coordinates used to approximate the main return
+    value. The first tuple will be for the left (rising) edge and the
+    second will be for the right (trailing) edge.
     """
     imax = numpy.argmax(y)
     if factor == 'sigma':
@@ -198,9 +199,13 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
     rising = (y[:imax] <= halfmax) & (y[1:imax + 1] > halfmax)
     falling = (y[imax:-1] > halfmax) & (y[imax + 1:] <= halfmax)
     if not numpy.any(rising):
-        raise ValueError('left edge does not fall below {} of max'.format(factor))
+        raise ValueError(
+            'left edge does not fall below {} of max'.format(factor)
+        )
     if not numpy.any(falling):
-        raise ValueError('right edge does not fall below {} of max'.format(factor))
+        raise ValueError(
+            'right edge does not fall below {} of max'.format(factor)
+        )
     # Select last rising, first falling index.
     # Initial [0] because of nonzero's weird tuple return
     rising_index = numpy.nonzero(rising)[0][-1] + numpy.arange(2)
@@ -208,8 +213,10 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
     if interp == 'linear':
         def linterp(x0, x1, y0, y1, y):
             return x0 + (x1 - x0) * (y - y0) / (y1 - y0)
-        rising = (linterp(*x[rising_index], *y[rising_index], halfmax), halfmax)
-        falling = (linterp(*x[falling_index], *y[falling_index], halfmax), halfmax)
+        rising = (linterp(*x[rising_index], *y[rising_index],halfmax),
+                  halfmax)
+        falling = (linterp(*x[falling_index], *y[falling_index], halfmax),
+                   halfmax)
     elif interp == 'nearest':
         def nearest(ys, inds, y):
             return inds[numpy.argmin(numpy.abs(ys[inds] - y))]
@@ -240,8 +247,8 @@ def primes_up_to(n):
     Parameters
     ----------
     n : int
-        The largest number to generate primes up to (exclusive). If you want an
-        inclusive range, add 1 to this input.
+        The largest number to generate primes up to (exclusive). If you
+        want an inclusive range, add 1 to this input.
 
     Return
     ------
@@ -318,10 +325,10 @@ def real_divide(a, b, zero=0, out=None):
 
     Return
     ------
-    np.ndarray :
-        The result of applying :py:func:`np.true_divide` to `a` and `b`,
-        except that elements corresponding to zeros in `b` are set to
-        `zero` instead of actually being computed.
+    numpy.ndarray :
+        The result of applying :py:func:`np.true_divide` to `a` and
+        `b`, except that elements corresponding to zeros in `b` are set
+        to `zero` instead of actually being computed.
     """
     mask = (b != 0)
     result = numpy.true_divide(a, b, where=mask, out=out)
@@ -380,7 +387,7 @@ def threshold(arr, thresh=3, type='std', direction='le'):
 
     Returns
     -------
-    np.ndarray :
+    numpy.ndarray :
         A boolean array of the same size and shape as `arr`, containing
         a mask indicating which elements pass threshold.
     """
@@ -422,7 +429,7 @@ def ang_diff_pos(theta1, theta2, full=2.0 * numpy.pi):
 
     Returns
     -------
-    np.ndarray :
+    numpy.ndarray :
         An array containing the broadcasted positive normalized
         difference of the two inputs.
     """
@@ -443,7 +450,8 @@ def ang_diff_min(theta1, theta2, full=2.0 * numpy.pi):
     The return value can be computed without branching by rotating by
     half a circle before applying the moduli, then rotating back::
 
-        ang_diff_min = fmod(fmod(theta2 - theta1 + 0.5 * full, full) + full, full) - 0.5 * full
+        ang_diff_min = fmod(fmod(theta2 - theta1 + 0.5 * full, full) +
+                            full, full) - 0.5 * full
 
     Inputs can be scalars or arrays. Arrays must broadcast together.
 
@@ -459,7 +467,7 @@ def ang_diff_min(theta1, theta2, full=2.0 * numpy.pi):
 
     Returns
     -------
-    np.ndarray :
+    numpy.ndarray :
         An array containing the broadcasted sign-preserving normalized
         difference of the two inputs with the smallest absolute value.
     """
@@ -496,7 +504,7 @@ def ang_diff_abs(theta1, theta2, full=2.0 * numpy.pi):
 
     Returns
     -------
-    np.ndarray :
+    numpy.ndarray :
         An array containing the broadcasted minimum absolute normalized
         difference of the two inputs.
     """
@@ -581,3 +589,28 @@ def runs2mask(runs, n=None):
 
     numpy.cumsum(view, out=view)
     return mask
+
+
+def rms(arr, axis=None, offset=0.0):
+    """
+    Compute the RMS of an array about an offset.
+
+    Parameters
+    ----------
+    arr : array like
+        The input array.
+    axis : int, optional
+        The axis about which to compute the RMS. Use None to indicate
+        the entire raveled array. The default is None.
+    offset : scalar, optional
+        The offset about which to compute the RMS. The default is zero.
+        Computing the RMS with ``offset=np.mean(arr, axis)`` is
+        equivalent to ``np.std(arr, axis)``.
+
+    Returns
+    -------
+    rms : numpy.ndarray
+        The RMS of `arr` about `offset` along `axis`.
+    """
+    return numpy.sqrt(numpy.mean(numpy.square(numpy.asanyarray(arr) - offset),
+                                 axis=axis))
