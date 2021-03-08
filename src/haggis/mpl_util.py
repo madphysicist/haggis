@@ -256,7 +256,7 @@ if plot_enabled:
                 y = numpy.asanyarray(y).ravel()
 
             dx = 0.5 * (x[-1] - x[0]) / (img.shape[1] - 1)
-            dy = 0.5 * (x[-1] - x[0]) / (img.shape[0] - 1)
+            dy = 0.5 * (y[-1] - y[0]) / (img.shape[0] - 1)
             extent = [x[0] - dx, x[-1] + dx,
                       y[-1] + dy, y[0] - dy]
 
