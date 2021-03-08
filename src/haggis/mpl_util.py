@@ -59,6 +59,8 @@ except ImportError:
     _display_missing_extra('plot', 'matplotlib')
     plot_enabled = False
 else:
+    import numpy
+
     __all__.extend([
         'figure_context', 'save_figure', 'set_figure_size', 'set_labels',
         'show_extents',
@@ -247,11 +249,11 @@ if plot_enabled:
             if x is None:
                 x = [0, img.shape[1] - 1]
             else:
-                x = np.asanyarray(x).ravel()
+                x = numpy.asanyarray(x).ravel()
             if y is None:
                 y = [0, img.shape[0] - 1]
             else:
-                y = np.asanyarray(y).ravel()
+                y = numpy.asanyarray(y).ravel()
 
             dx = 0.5 * (x[-1] - x[0]) / (img.shape[1] - 1)
             dy = 0.5 * (x[-1] - x[0]) / (img.shape[0] - 1)
@@ -259,4 +261,3 @@ if plot_enabled:
                       y[-1] + dy, y[0] - dy]
 
         return ax.imshow(img, extent=extent, **kwargs)
-
