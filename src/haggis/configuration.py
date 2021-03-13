@@ -52,7 +52,7 @@ class JSONObject:
     Base class of additional output formatting types.
 
     To register a new formatter use the module-level
-    :py:meth:`_registry.register` function.
+    :py:meth:`json_registry.register` function.
 
     .. py:attribute:: type
 
@@ -118,7 +118,7 @@ class NumpyObject(JSONObject):
         }
     }
 
-    def __init__(self, printopts=None):
+    def __init__(self, printopts=None, type=np.ndarray):
         """
         Create an instance with the specified print options.
 
@@ -130,7 +130,7 @@ class NumpyObject(JSONObject):
             allowed, except ``'prefix'``. The default is to use the
             builtin formatting spec.
         """
-        super().__init__(type=np.ndarray)
+        super().__init__(type=type)
         if printopts:
             self.printopts = self._PRINTOPTS.copy()
             self.printopts.update(printopts)
