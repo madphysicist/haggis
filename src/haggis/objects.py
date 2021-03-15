@@ -174,7 +174,7 @@ def copy_class(c, globals=None, module=None):
     return d
 
 
-def copy_func(f, globals=None, module=None):
+def copy_func(f, globals=None, name=None, module=None):
     """
     Creates a shallow copy of a function object, optionally replacing
     the object it references for its globals.
@@ -183,7 +183,7 @@ def copy_func(f, globals=None, module=None):
     module, and having it behave as a function of the importing module::
 
         from mod import func
-        func = copy_func(func, globals(), __name__)
+        func = copy_func(func, globals(), module=__name__)
 
     Parameters
     ----------
@@ -192,6 +192,9 @@ def copy_func(f, globals=None, module=None):
     globals : dict or None
         If :py:obj:`None`, copy the global dictionary referenced by
         `f`. A popular alternative is ``globals()``.
+    name : str or None
+        The name to assign to the new function. If None, copy
+        ``f.__name__`` directly.
     module : str or None
         The name of the module that this function belongs to. If
         :py:obj:`None`, copy ``f.__module__`` directly. A popular
@@ -202,9 +205,10 @@ def copy_func(f, globals=None, module=None):
     Based originally on https://stackoverflow.com/a/13503277/2988730,
     and updated in https://stackoverflow.com/a/49077211/2988730.
     """
-    g = FunctionType(f.__code__, f.__globals__ if globals is None else globals,
-                     name=f.__name__, argdefs=f.__defaults__,
-                     closure=f.__closure__)
+    g = FunctionType(f.__code__,
+                     f.__globals__ if globals is None else globals,
+                     name=f.__name__ if name is None else name,
+                     argdefs=f.__defaults__, closure=f.__closure__)
     g = update_wrapper(g, f)
     if module is not None:
         g.__module__ = module
