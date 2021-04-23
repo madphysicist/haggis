@@ -23,7 +23,6 @@
 # Version: 11 Feb 2021: Added mask2runs andruns2mask
 # Version: 05 Mar 2021: Added rms
 
-
 """
 Math utility functions that are otherwise uncategorized.
 """
@@ -326,7 +325,7 @@ def real_divide(a, b, zero=0, out=None):
     Return
     ------
     numpy.ndarray :
-        The result of applying :py:func:`np.true_divide` to `a` and
+        The result of applying :py:func:`numpy.true_divide` to `a` and
         `b`, except that elements corresponding to zeros in `b` are set
         to `zero` instead of actually being computed.
     """
@@ -591,26 +590,34 @@ def runs2mask(runs, n=None):
     return mask
 
 
-def rms(arr, axis=None, offset=0.0):
+def rms(arr, axis=None, bias=0, out=None):
     """
-    Compute the RMS of an array about an offset.
+    Comute the root-mean-square (RMS) of an array about an arbitrary
+    bias.
 
     Parameters
     ----------
-    arr : array like
+    arr : array-like
         The input array.
-    axis : int, optional
-        The axis about which to compute the RMS. Use None to indicate
-        the entire raveled array. The default is None.
-    offset : scalar, optional
-        The offset about which to compute the RMS. The default is zero.
-        Computing the RMS with ``offset=np.mean(arr, axis)`` is
-        equivalent to ``np.std(arr, axis)``.
+    axis : int or tuple or None, optional
+        The axis or axes to compute the RMS along. The average of the
+        squares will be taken along this axis or axes. None (the
+        default) indicates the entire raveled array.
+    bias : array-like, optional
+        The offset about which to compute the RMS. The default is zero
+        for standard RMS. The bias must broadcast to `arr`. Setting
+        ``bias=numpy.mean(arr, axis=axis, keepdims=True)`` is equivalent
+        to computing ``numpy.std(arr, axis=axis)``.
+    out : numpy.ndarray or None, optional
+        The array to output results into, if not None. Use carefully,
+        as *all* intermediate calculations will be placed into this
+        array: a square, a mean and a square root. Using an output of
+        an inappropriate type may lead to errors. The default is None.
 
-    Returns
-    -------
+    Return
+    ------
     rms : numpy.ndarray
-        The RMS of `arr` about `offset` along `axis`.
+        The RMS of `arr` about `bias` along `axis`.
     """
-    return numpy.sqrt(numpy.mean(numpy.square(numpy.asanyarray(arr) - offset),
-                                 axis=axis))
+    return numpy.sqrt(numpy.mean(numpy.square(numpy.asanyarray(arr) - bias,
+                                        out=out), axis=axis, out=out), out=out)
