@@ -142,6 +142,9 @@ for name in _UI_ORDER:
 else:
     warn('No GUI package imported. All functions will fail.')
 
+    def open_file(*args, **kwargs):
+        raise TypeError('No supporting GUI package found')
+
 
 def get_existing_file(filename=None, title='Open', filters=None, sel=0):
     """
