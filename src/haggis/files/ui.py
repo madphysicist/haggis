@@ -92,9 +92,11 @@ for name in _UI_ORDER:
                 Qt implementation of the `open_file` interface.
                 """
                 filters, sel = _filt2qt(filters, sel)
-                return QFileDialog.getOpenFileName(
+                name, _ = QFileDialog.getOpenFileName(
                     None, title, dir, filters, sel
                 )
+                return name
+
         elif name == 'tkinter':
             from tkinter import Tk
             from tkinter.filedialog import askopenfilename
@@ -117,7 +119,7 @@ for name in _UI_ORDER:
                 Convert a filter from `open_file` to Tk-suitable format.
                 """
                 if not filt:
-                    return None
+                    return []
 
                 try:
                     filtee = filt.items()
