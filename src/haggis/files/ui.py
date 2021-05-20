@@ -28,6 +28,9 @@ The GUI package is chosen based on a list of supported selections,
 defaulting to tkinter. Currently, only PyQt and tkinter are supported.
 """
 
+__all__ = ['get_existing_file']
+
+
 from os.path import isdir, isfile
 from warnings import warn
 
