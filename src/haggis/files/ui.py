@@ -38,6 +38,12 @@ from warnings import warn
 _UI_ORDER = ['pyqt', 'tkinter']
 
 
+def _iter(i):
+    if isinstance(i, str):
+        return i,
+    return i
+
+
 for name in _UI_ORDER:
     try:
         if name == 'pyqt':
@@ -63,7 +69,7 @@ for name in _UI_ORDER:
                 """
                 Join all fixed extensions in `seq` with `sep`.
                 """
-                return sep.join(map(_fix, seq))
+                return sep.join(map(_fix, _iter(seq)))
 
             def _filt2str(item):
                 """
@@ -125,7 +131,7 @@ for name in _UI_ORDER:
                     filtee = filt.items()
                 except AttributeError:
                     filtee = filt
-                return [(key, _fix(elem)) for key, value in filtee for elem in value]
+                return [(key, _fix(elem)) for key, value in filtee for elem in _iter(value)]
 
             def open_file(dir, title, filters=(), sel=0):
                 """
