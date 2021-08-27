@@ -23,7 +23,7 @@
 # Version: 11 Feb 2021: Added mask2runs andruns2mask
 # Version: 05 Mar 2021: Added rms
 # Version: 21 Jul 2021: Added weights and ddof to rms
-
+# Version: 27 Aug 2021: Added map_array
 
 """
 Math utility functions that are otherwise uncategorized.
@@ -34,14 +34,15 @@ import math
 import numpy
 from scipy.stats import iqr
 
+from . import Sentinel
 from .mapping import option_lookup
 
 
 __all__ = [
         'ang_diff_abs', 'ang_diff_min', 'ang_diff_pos', 'count_divisors',
-        'ellipse', 'first_primes', 'full_width_half_max', 'mask2runs',
-        'primes_up_to', 'real_divide', 'rms', 'round_sig', 'runs2mask',
-        'threshold',
+        'ellipse', 'first_primes', 'full_width_half_max', 'map_array',
+        'mask2runs', 'primes_up_to', 'real_divide', 'rms', 'round_sig',
+        'runs2mask', 'threshold',
 ]
 
 
@@ -637,7 +638,52 @@ def rms(arr, axis=None, bias=0, weights=None, ddof=0, out=None):
         weights = weights.ravel()
     else:
         axis = numpy.core.multiarray.normalize_axis_index(axis, sq.ndim)
-        weights = numpy.reshape(weights,
-                                weights.shape + (1,) * (sq.ndim - axis - 1))
+        if weights.ndim < sq.ndim:
+            weights = numpy.reshape(weights,
+                                    weights.shape + (1,) * (sq.ndim - axis - 1))
     weights = numpy.broadcast_to(weights, sq.shape)
     return numpy.sqrt(numpy.sum(sq * weights, axis=axis, out=out) / (weights.sum(axis=axis) - ddof), out=out)
+
+
+def map_array(map, arr, value=None, default=Sentinel):
+    """
+    Convert the elements of a numpy array using a mapping.
+
+    The implementation uses looping to interface between the python and
+    numpy datasets, but is as efficient as possible under the
+    circumstaces. Intended for mapping a small number of arbitrary
+    labels to some alternative value.
+
+    Parameters
+    ----------
+    map : Mapping
+        The mapping to apply. Any object with a `get` method that
+        supports default values is accepted.
+    arr : array-like
+        The array to convert.
+    value : callable, optional
+        A function to apply to the dictionary values before placing in
+        the output array. The default is a no-op.
+    default :
+        The value to use for array elements not in `mapping`. The
+        default is to raise a `KeyError`. `None` is interpreted as a
+        valid default.
+
+    Returns
+    -------
+    mapped_array : array-like
+        An array of the same shape as `arr`, with elements transformed
+        according to the mapping.
+    """
+    def get(key):
+        v = map.get(key, default)
+        if v is Sentinel:
+            raise KeyError(key)
+        return v
+
+    unq, ind = numpy.unique(arr, return_inverse=True)
+    if value:
+        vals = [value(get(u)) for u in unq]
+    else:
+        vals = [get(u) for u in unq]
+    return numpy.array(vals)[ind]
