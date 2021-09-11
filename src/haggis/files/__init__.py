@@ -19,6 +19,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 10 Sep 2021: Added split_extension and `n` to insert_suffix
 
 
 """
@@ -29,7 +30,8 @@ name of the file type they deal with, or to the extension.
 """
 
 __all__ = [
-    'ensure_extension', 'insert_suffix', 'open_file', 'PreOpenedFile',
+    'ensure_extension', 'insert_suffix', 'open_file', 'split_extension',
+    'PreOpenedFile',
 ]
 
 
@@ -158,7 +160,41 @@ ensure_extension.policies = (
 )
 
 
-def insert_suffix(filename, suffix, allow_duplicate=False):
+def split_extension(filename, max=None):
+    """
+    Upgraded version of :py:func:`os.path.splitext` that splits apart
+    all the available extensions.
+
+    Parameters
+    ----------
+    filename : str or ~pathlib.Path
+        The file name to split.
+    max : int or None, optional
+        The maximum number of extensions to split off. ``max=1`` is
+        equivalent to calling `os.path.splitext`. ``max=None``, zero
+        or negative values means split all extensions off. Default
+        is `None`.
+
+    Returns
+    -------
+    parts : list
+        A list containing the base name and up to `max` extensions.
+        Any unsplit extensions will still be attached to the base name.
+    """
+    if max is None or max <= 0:
+        max = -1
+
+    parts = [filename]
+    while max != 0:
+        s = splitext(parts[0])
+        if not s[1]:
+            break
+        parts[:1] = s
+        max -= 1
+    return parts
+
+
+def insert_suffix(filename, suffix, n=0, allow_duplicate=False):
     """
     Insert a suffix into the file name before the extension.
 
@@ -171,6 +207,12 @@ def insert_suffix(filename, suffix, allow_duplicate=False):
         The name to modify.
     suffix : str
         The suffix to insert.
+    n : int, optional
+        The extension after which to insert the suffix. Indexing
+        similar to list indexing, with ``n=0`` referring to the base
+        name and ``n=-1`` the last extension. In ``"a.b.c.d"``,
+        ``".d"`` is at ``n=3`` or ``n=-1``, ``"a"`` is at ``n=0`` or
+        ``n=-4``. The default is to prepend to the base name: ``n=0``.
     allow_duplicate : bool
         If :py:obj:`True`, no check will be made to see if the suffix is
         already present. If :py:obj:`False` (the default), the suffix
@@ -181,9 +223,10 @@ def insert_suffix(filename, suffix, allow_duplicate=False):
     inserted : str
         The modified name.
     """
-    parts = splitext(filename)
-    if allow_duplicate or not parts[0].endswith(suffix):
-        return str(suffix).join(parts)
+    parts = split_extension(filename)
+    if allow_duplicate or not parts[n].endswith(suffix):
+        parts[n] += suffix
+        return ''.join(parts)
     return str(filename)
 
 
