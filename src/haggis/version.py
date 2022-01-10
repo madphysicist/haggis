@@ -20,6 +20,7 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
 # Version: 09 Jan 2021: Bumped to 0.1a2
+# Version: 10 Jan 2022: Bumped to 0.1
 
 
 """
@@ -33,4 +34,4 @@ entire package to get the version number.
 
 
 #: The current version
-__version__ = '0.1a2'
+__version__ = '0.1'
