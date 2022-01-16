@@ -334,7 +334,10 @@ def real_divide(a, b, zero=0, out=None):
     """
     mask = (b != 0)
     result = numpy.true_divide(a, b, where=mask, out=out)
-    result[~mask] = zero
+    if result.ndim > 0:
+        result[~mask] = zero
+    elif ~mask:
+        result = zero
     return result
 
 
