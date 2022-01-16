@@ -22,20 +22,38 @@
 
 
 """
-Pytest plugin for processing the haggis-specific command-line options.
+Collection of testing utilities for common actions.
 """
 
-def pytest_addoption(parser):
+from contextlib import contextmanager
+from os.path import join
+
+
+FOLDER = '.haggis_test'
+
+
+@contextmanager
+def plotting_context(*args, **kwargs):
     """
-    Add options to the default command line.
+    Context manager that imports matplotlib as necessary, creates a
+    figure, and closes it on exit.
 
-    The following options are added:
-
-    `--plots`
-        Draw plots of x-values, y-values and fit comparisons. This
-        option checks if matplotlib is installed, and issues a warning
-        if not.
-
+    All parameters are passed directly to
+    :py:func:`~matplotlib.pyplot.figure`.
     """
-    parser.addoption("--plots", action="store_true", default=False,
-                     help="Generate graphical plots of input data")
+    from matplotlib import pyplot as plt
+    figure = plt.figure(*args, **kwargs)
+    yield figure
+    plt.close(figure)
+
+
+def save(fig, module, label, debug=False, dpi=300):
+    """
+    Saves a figure in the standard test output directory.
+
+    The figure name is nomalized with the name of the calling module.
+    """
+    ext = 'debug.png' if debug else 'png'
+    label = f'{module}-{label}.{ext}'
+
+    fig.savefig(join(FOLDER, label), dpi=dpi)

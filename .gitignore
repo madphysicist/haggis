@@ -30,6 +30,7 @@ dist/
 
 # pytest artifacts
 .cache/
+.haggis_test/
 
 # doc artifacts
 /doc/_build/

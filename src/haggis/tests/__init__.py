@@ -22,20 +22,5 @@
 
 
 """
-Pytest plugin for processing the haggis-specific command-line options.
+Test package for the :py:mod:`haggis` root package.
 """
-
-def pytest_addoption(parser):
-    """
-    Add options to the default command line.
-
-    The following options are added:
-
-    `--plots`
-        Draw plots of x-values, y-values and fit comparisons. This
-        option checks if matplotlib is installed, and issues a warning
-        if not.
-
-    """
-    parser.addoption("--plots", action="store_true", default=False,
-                     help="Generate graphical plots of input data")
