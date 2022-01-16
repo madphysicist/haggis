@@ -45,6 +45,8 @@ Modules and Packages
 
 .. autosummary::
 
+   haggis.configuration
+   haggis.ctypes_util
    haggis.exceptions
    haggis.files
    haggis.files.csv
@@ -58,12 +60,17 @@ Modules and Packages
    haggis.latex_util
    haggis.load
    haggis.logs
+   haggis.mapping
    haggis.math
    haggis.mpl_util
    haggis.numbers
    haggis.objects
    haggis.os
    haggis.recipes
+   haggis.string_util
+   haggis.structures
+   haggis.threads
+   haggis.time
 
 
 ------------------------
