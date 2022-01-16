@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+
 # haggis: a library of general purpose utilities
 #
-# Copyright (C) 2019  Joseph R. Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
+# Copyright (C) 2022  Joseph R. Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,21 +18,24 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
-# Version: 13 Apr 2019: Initial Coding
+# Version: 12 Jan 2022: Initial Coding
 
-# Python artifacts
-__pycache__/
-*.pyc
 
-# distutils and setuptools artifacts
-MANIFEST
-build/
-dist/
-*.egg-info/
+"""
+Pytest plugin for processing the haggis-specific command-line options.
+"""
 
-# pytest artifacts
-.cache/
-.haggis_test/
+def pytest_addoption(parser):
+    """
+    Add options to the default command line.
 
-# doc artifacts
-/doc/_build/
+    The following options are added:
+
+    `--plots`
+        Draw plots of x-values, y-values and fit comparisons. This
+        option checks if matplotlib is installed, and issues a warning
+        if not.
+
+    """
+    parser.addoption("--plots", action="store_true", default=False,
+                     help="Generate graphical plots of input data")

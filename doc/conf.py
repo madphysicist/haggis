@@ -58,6 +58,7 @@ needs_sphinx = '1.7.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
@@ -192,7 +193,7 @@ texinfo_documents = [
 # official documentations, use a (possibly outdated) local backup if that fails.
 intersphinx_mapping = {
     'astropy': (
-        'http://docs.astropy.org/en/stable/',
+        'https://docs.astropy.org/en/stable/',
         (None, '_intersphinx/astropy.inv')
     ), 'matplotlib': (
         'https://matplotlib.org/',
@@ -201,7 +202,7 @@ intersphinx_mapping = {
         'https://openpyxl.readthedocs.io/en/stable/',
         (None, '_intersphinx/openpyxl.inv')
     ), 'pandas': (
-        'http://pandas.pydata.org/pandas-docs/stable/',
+        'https://pandas.pydata.org/pandas-docs/stable/',
         (None, '_intersphinx/pandas.inv')
     ), 'python': (
         'https://docs.python.org/3/',

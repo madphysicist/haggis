@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # haggis: a library of general purpose utilities
@@ -24,6 +23,7 @@
 # Version: 05 Mar 2021: Added rms
 # Version: 21 Jul 2021: Added weights and ddof to rms
 # Version: 27 Aug 2021: Added map_array
+# Version: 12 Jan 2021: Added segment_distance
 
 """
 Math utility functions that are otherwise uncategorized.
@@ -42,7 +42,7 @@ __all__ = [
         'ang_diff_abs', 'ang_diff_min', 'ang_diff_pos', 'count_divisors',
         'ellipse', 'first_primes', 'full_width_half_max', 'map_array',
         'mask2runs', 'primes_up_to', 'real_divide', 'rms', 'round_sig',
-        'runs2mask', 'threshold',
+        'runs2mask', 'segment_distance', 'threshold'
 ]
 
 
@@ -334,7 +334,10 @@ def real_divide(a, b, zero=0, out=None):
     """
     mask = (b != 0)
     result = numpy.true_divide(a, b, where=mask, out=out)
-    result[~mask] = zero
+    if result.ndim > 0:
+        result[~mask] = zero
+    elif ~mask:
+        result = zero
     return result
 
 
@@ -687,3 +690,122 @@ def map_array(map, arr, value=None, default=Sentinel):
     else:
         vals = [get(u) for u in unq]
     return numpy.array(vals)[ind]
+
+
+def segment_distance(p, p1, p2, axis=None, return_t=False, segment=True):
+    r"""
+    Find the distance between an N-dimensional point and a line or line
+    segment.
+
+    The distance from a point to a line in N dimensions is the length
+    of a normal dropped to the line. Using the fact that the dot
+    product of orthogonal vectors is we can find the point
+    :math:`\vec{p}_0` on the line that corresponds to this location.
+
+    First, parametrize the points on the line through parameter
+    :math:`t` as
+
+    .. math::
+
+       \vec{\ell} = \vec{p}_1 + t (\vec{p}_2 - \vec{p}_1)
+
+    Then set up the equation with dot-products and solve for :math:`t`:
+
+    .. math::
+
+       (\vec{p} - \vec{p}_0) \cdot (\vec{p}_2 - \vec{p}_1) = 0
+
+    .. math::
+
+       (\vec{p} - \vec{p}_1 - t (\vec{p}_2 - \vec{p}_1)) \cdot (\vec{p}_2 - \vec{p}_1) = 0
+
+    .. math::
+
+       t (\vec{p}_2 - \vec{p}_1) \cdot (\vec{p}_2 - \vec{p}_1) = (\vec{p} - \vec{p}_1) \cdot (\vec{p}_2 - \vec{p}_1)
+
+    .. math::
+
+       t = \frac{(\vec{p} - \vec{p}_1) \cdot (\vec{p}_2 - \vec{p}_1)}{\left\lVert\vec{p}_2 - \vec{p}_1\right\rVert ^ 2}
+
+    .. math::
+
+       \vec{p}_0 = \vec{p}_1 + \frac{(\vec{p} - \vec{p}_1) \cdot (\vec{p}_2 - \vec{p}_1)}{\left\lVert\vec{p}_2 - \vec{p}_1\right\rVert ^ 2} (\vec{p}_2 - \vec{p}_1)
+
+    The value of :math:`t` represents the location of :math:`\vec{p}_0`
+    in relationship to :math:`\vec{p}_1` and :math:`\vec{p}_2`: values
+    in the range :math:`[0, 1]` are on the line segment, negative
+    values are on the side closer to :math:`\vec{p}_1`, and values
+    greater than one are on the side of the line closer to
+    :math:`\vec{p}_2`.
+
+    The value of :math:`t` at the closest approach can be returned by
+    setting ``return_t=True``. The value returned in this case applies
+    to the entire line, even if ``segment == True`` and the closest
+    point is one of the endpoints of the line segment.
+
+    Parameters
+    ----------
+    p : array-like
+        The target point. Must broadscast to `p1` and `p2`.
+    p1 : array-like
+        The start of the line segment. Must broadcast to the same shape
+        as `p` and `p2`.
+    p2 : array-like
+        The end of the line segment. Must broadcast to the same shape
+        as `p` and `p1`.
+    axis : int or None
+        The axis corresponding to the point vectors in the broadcasted
+        arrays. If `None`, all point arrays are raveled.
+    return_t: bool
+        If `True`, return an additional value indicating the parameter
+        :math:`t` at the distance of closest approach along the line.
+        This will be the same regargless of `segment`.
+    segment: bool
+        If `True`, find the nearest point on the line segment bounded
+        by `p1` and `p2` rather than the line passing between them.
+
+    Returns
+    -------
+    dist : float or ~numpy.ndarray
+        Distance from `p` to the line or line segment passing through
+        `p1` and `p2`. The shape of the result is the broadcasted shape
+        of the inputs, collapsed along `axis`.
+
+        Scalar if `axis is None` or the inputs are all one-dimensional.
+    t : float or ~numpy.ndarray
+        An array of the same shape as `dist` containing the value of
+        parameter :math:`t` for each line. The parameter is the
+        location of the normal from `p` to the line passing through
+        `p1` and `p2`, regardless if the distance is to the line
+        segment or the line.
+
+        Returned only if `return_t` is set.
+    """
+    p, p1, p2 = numpy.broadcast_arrays(p, p1, p2)
+    seg = p2 - p1
+    norm2_seg = (seg * seg).sum(axis=axis, keepdims=True)
+    t = ((p - p1) * seg).sum(axis=axis, keepdims=True) / norm2_seg
+    p0 = p1 + t * seg
+
+    if segment:
+        dist = numpy.empty_like(p0)
+        mask1 = t < 0
+        mask2 = t > 1
+        numpy.subtract(p0, p, where=~(mask1 | mask2), out=dist)
+        numpy.subtract(p1, p, where=mask1, out=dist)
+        numpy.subtract(p2, p, where=mask2, out=dist)
+    else:
+        dist = p0 - p
+    dist = numpy.square(dist, out=dist).sum(axis=axis, keepdims=True)
+    numpy.sqrt(dist, out=dist)
+
+    if axis is None or seg.ndim == 1:
+        dist = dist.item()
+        t = t.item()
+    else:
+        dist = dist.squeeze(axis)
+        t = t.squeeze(axis)
+
+    if return_t:
+        return dist, t
+    return dist

@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+
 # haggis: a library of general purpose utilities
 #
-# Copyright (C) 2019  Joseph R. Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
+# Copyright (C) 2022  Joseph R. Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,21 +18,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
-# Version: 13 Apr 2019: Initial Coding
+# Version: 12 Jan 2022: Initial Coding
 
-# Python artifacts
-__pycache__/
-*.pyc
 
-# distutils and setuptools artifacts
-MANIFEST
-build/
-dist/
-*.egg-info/
-
-# pytest artifacts
-.cache/
-.haggis_test/
-
-# doc artifacts
-/doc/_build/
+"""
+Test package for the :py:mod:`haggis` root package.
+"""
