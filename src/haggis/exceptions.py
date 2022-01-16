@@ -41,7 +41,7 @@ class ErrorTransform:
 
     .. py:attribute:: out_type
 
-       The type to rethrow as.
+       The type to reraise as.
 
     .. py:attribute:: message
 

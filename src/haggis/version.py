@@ -19,6 +19,8 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 09 Jan 2021: Bumped to 0.1a2
+# Version: 10 Jan 2022: Bumped to 0.1
 
 
 """
@@ -30,5 +32,6 @@ facilitate deployment and testing, so users do not need to install the
 entire package to get the version number.
 """
 
+
 #: The current version
-__version__ = '0.1a1'
+__version__ = '0.1'

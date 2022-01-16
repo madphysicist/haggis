@@ -47,6 +47,8 @@ class SentinelType:
 
     This class's truth value is always :py:obj:`False`. It does not
     allow any additional attributes to be added.
+
+    Simply creating an empty :py:class:`object` is fine in most cases.
     """
     __slots__ = ()
 
@@ -69,6 +71,7 @@ def _display_missing_extra(extra, libs=None):
     Print a message to standard error regarding a missing extra.
     """
     from sys import stderr
+
     print(
         'This feature is only enabled with the [{extra}] extra. Try\n\n'
         'pip install haggis[{extra}]'.format(extra=extra), file=stderr
@@ -76,7 +79,5 @@ def _display_missing_extra(extra, libs=None):
     if libs:
         if isinstance(libs, str):
             libs = [libs]
-        print(
-            '\nor install {} '
-            'manually'.format(', '.join(str(lib) for lib in libs)), file=stderr
-        )
+        print('\nor install {} manually'.format(
+            ', '.join(str(lib) for lib in libs)), file=stderr)

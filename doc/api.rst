@@ -66,6 +66,22 @@ Modules and Packages
    haggis.recipes
 
 
+------------------------
+``configuration`` module
+------------------------
+
+.. automodule:: haggis.configuration
+   :members:
+
+
+----------------------
+``ctypes_util`` module
+----------------------
+
+.. automodule:: haggis.ctypes_util
+   :members:
+
+
 ---------------------
 ``exceptions`` module
 ---------------------
@@ -171,6 +187,15 @@ Modules and Packages
    :members:
 
 
+------------------
+``mapping`` module
+------------------
+
+.. automodule:: haggis.mapping
+   :members:
+   :special-members: __init__, __getitem__
+
+
 ---------------
 ``math`` module
 ---------------
@@ -217,7 +242,7 @@ Modules and Packages
 
 .. automodule:: haggis.recipes
    :members:
-   :special-members: __init__, __getitem__
+   :special-members: __init__, __getitem__, __enter__, __exit__
 
 
 ----------------------
@@ -226,3 +251,31 @@ Modules and Packages
 
 .. automodule:: haggis.string_util
    :members:
+
+
+---------------------
+``structures`` module
+---------------------
+
+.. automodule:: haggis.structures
+   :members:
+   :special-members: __init__, __contains__, __len__, __iter__,
+                     __repr__, __str__
+
+
+------------------
+``threads`` module
+------------------
+
+.. automodule:: haggis.threads
+   :members:
+   :special-members: __init__
+
+
+---------------
+``time`` module
+---------------
+
+.. automodule:: haggis.time
+   :members:
+   :special-members: __init__, __enter__, __exit__, __str__

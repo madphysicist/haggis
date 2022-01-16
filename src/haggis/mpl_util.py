@@ -20,6 +20,9 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 09 Jan 2021: Added set_labels
+# Version: 11 Feb 2021: Added show_extents
+# Version: 30 Mar 2021: Added semilogx_base, semilogy_base, loglog_base
 
 
 """
@@ -43,7 +46,6 @@ of the module will be present.
 """
 
 
-import math
 from contextlib import contextmanager
 from io import BytesIO
 
@@ -53,12 +55,18 @@ __all__ = ['plot_enabled']
 
 try:
     from matplotlib import pyplot as plt
+    from matplotlib import ticker as mtick
 except ImportError:
     from . import _display_missing_extra
     _display_missing_extra('plot', 'matplotlib')
     plot_enabled = False
 else:
-    __all__.extend(['figure_context', 'save_figure', 'set_figure_size'])
+    import numpy
+
+    __all__.extend([
+        'figure_context', 'save_figure', 'set_figure_size', 'set_labels',
+        'show_extents', 'semilogx_base', 'semilogy_base', 'loglog_base',
+    ])
     plot_enabled = True
 
 
@@ -155,3 +163,277 @@ if plot_enabled:
         elif h is None:
             h = w * curr_h / curr_w
         fig.set_size_inches(w, h)
+
+
+    def set_labels(artists, labels):
+        """
+        Assign a separate label to each artist in the iterable.
+
+        Useful in labelling each column separately when plotting a
+        multi-column array. For example::
+
+            from matplotlib import pyplot as plt
+            import numpy as np
+
+            x = np.arange(5)
+            y = np.random.ranint(10, size=(5, 3))
+
+            fig, ax = plt.subplots()
+            set_labels(ax.plot(x, y), 'ABC')
+
+        Based on https://stackoverflow.com/a/64780035/2988730.
+
+        Parameters
+        ----------
+        artists :
+            Iterable of artists. Any extra entries are silently ignored
+            (not labeled).
+        labels :
+            Iterable of strings. Any extra labels are silently dropped.
+        """
+        for artist, label in zip(artists, labels):
+            artist.set_label(label)
+
+
+    def show_extents(img, x=None, y=None, ax=None, **kwargs):
+        """
+        Display an image with the correct x- and y- coordinates,
+        adjusted to pixel centers.
+
+        This function is a wrapper around
+        :py:func:`~matplotlib.axes.Axes.imshow`. Normally, ``imshow``
+        will scale the axes limits to the outer edges of the image
+        when given an ``extent`` argument. However, it is generally
+        more accurate to set the centers of the pixels.
+
+        Parameters
+        ----------
+        img :
+            The image to display.
+        x : array-like, optional
+            The x-coordinates of the pixels. Only the first and last
+            coordinate are ever used, so it is safe to pass in any
+            sequence of two numbers. ``x[0]`` is the intended
+            x-coordinate of the center of the leftmost column of the
+            image, while ``x[-1]`` is the x-coordinate of the center of
+            the rightmost column.
+
+            Defaults to ``[0, img.shape[1] - 1]``.
+        y : array-like, optional
+            The y-coordinates of the pixels. Only the first and last
+            coordinate are ever used, so it is safe to pass in any
+            sequence of two numbers. ``y[0]`` is the intended
+            y-coordinate of the center of the topmost row of the image,
+            while ``y[-1]`` is the y-coordinate of the center of
+            the bottommost column.
+
+            Defaults to ``[0, img.shape[0] - 1]``.
+        ax : matplotlib.axes.Axes, optional
+            The axes to plot on. If not supplied, a new figure and axes
+            are created.
+        **kwargs :
+            All remaining arguments are passed through to
+            :py:func:`~matplotlib.axes.Axes.imshow`. If an explicit
+            ``extent`` is passed in, ``x`` and ``y`` will be ignored.
+
+        Return
+        ------
+        image : matplotlib.image.AxesImage
+            The image object created by
+            :py:func:`~matplotlib.axes.Axes.imshow`.
+        """
+        if ax is None:
+            _, ax = plt.subplots()
+
+        if 'extent' in kwargs:
+            extent = kwargs.pop('extent')
+        else:
+            if x is None:
+                x = [0, img.shape[1] - 1]
+            else:
+                x = numpy.asanyarray(x).ravel()
+            if y is None:
+                y = [0, img.shape[0] - 1]
+            else:
+                y = numpy.asanyarray(y).ravel()
+
+            dx = 0.5 * (x[-1] - x[0]) / (img.shape[1] - 1)
+            dy = 0.5 * (y[-1] - y[0]) / (img.shape[0] - 1)
+            extent = [x[0] - dx, x[-1] + dx,
+                      y[-1] + dy, y[0] - dy]
+
+        return ax.imshow(img, extent=extent, **kwargs)
+
+
+    def _log_base_func(base):
+        """
+        Convert the base to float and retrieve the simplest function to
+        take a logarithm in that base.
+
+        Parameters
+        ----------
+        base : float
+            The base.
+
+        Returns
+        -------
+        base : float
+            The input converted to a :py:class:`float`.
+        log : callable
+            A function that returns :math:`log_{base}(x)` for any
+            array-like `x`.
+        """
+        base = float(base)
+        log = {numpy.e: numpy.log,
+               10.0: numpy.log10,
+               2.0: numpy.log2}.get(base)
+
+        if log is None:
+            lb = numpy.log(base)
+            log = lambda x: numpy.log(x) / lb
+
+        return base, log
+
+
+    def semilogx_base(axes, *args, basex=numpy.e, labelx='e', **kwargs):
+        """
+        Create a semilogx plot with a custom base.
+
+        The default is to use base `e`.
+
+        This is a convenience wrapper for
+        :py:meth:`~matplotlib.axes.Axes.semilogx` which sets ``basex``
+        and adds a formatter with a custom label.
+
+        Parameters
+        ----------
+        axes : matplotlib.axes.Axes
+            The axes to plot on.
+        *args :
+            Normal positional arguments to
+            :py:meth:`~matplotlib.axes.Axes.semilogx`.
+        basex : float, optional
+            Base of the x-axis log-scale. The default is `numpy.e`.
+        labelx : str, optional
+            The label to use to show the log base for tick marks in the
+            x-axis. The default is ``'e'``.
+        **kwargs :
+            Normal keyword arguments to
+            :py:meth:`~matplotlib.axes.Axes.semilogx`.
+
+        Returns
+        -------
+        list of :py:class:`~matplotlib.lines.Line2D`
+            Objects representing the plotted data.
+        """
+        basex, fnx = _log_base_func(basex)
+
+        if labelx is None:
+            labelx = str(basex)
+
+        def xticks(x, pos):
+            return f'${labelx}^{{{fnx(x):.0f}}}$'
+
+        lines = axes.semilogx(*args, basex=basex, **kwargs)
+        axes.xaxis.set_major_formatter(mtick.FuncFormatter(xticks))
+        return lines
+
+
+    def semilogy_base(axes, *args, basey=numpy.e, labely='e', **kwargs):
+        """
+        Create a semilogy plot with a custom base.
+
+        The default is to use base `e`.
+
+        This is a convenience wrapper for
+        :py:meth:`~matplotlib.axes.Axes.semilogy` which sets ``basey``
+        and adds a formatter with a custom label.
+
+        Parameters
+        ----------
+        axes : matplotlib.axes.Axes
+            The axes to plot on.
+        *args :
+            Normal positional arguments to
+            :py:meth:`~matplotlib.axes.Axes.semilogy`.
+        basey : float, optional
+            Base of the y-axis log-scale. The default is `numpy.e`.
+        labely : str, optional
+            The label to use to show the log base for tick marks in the
+            y-axis. The default is ``'e'``.
+        **kwargs :
+            Normal keyword arguments to
+            :py:meth:`~matplotlib.axes.Axes.semilogy`.
+
+        Returns
+        -------
+        list of :py:class:`~matplotlib.lines.Line2D`
+            Objects representing the plotted data.
+        """
+        basey, fny = _log_base_func(basey)
+
+        if labely is None:
+            labely = str(basey)
+
+        def yticks(y, pos):
+            return f'${labely}^{{{fny(y):.0f}}}$'
+
+        lines = axes.semilogy(*args, basey=basey, **kwargs)
+        axes.yaxis.set_major_formatter(mtick.FuncFormatter(yticks))
+        return lines
+
+
+    def loglog_base(axes, *args, basex=numpy.e, basey=numpy.e,
+                    labelx='e', labely='e', **kwargs):
+        """
+        Create a log-log plot with a custom base.
+
+        The default is to use base `e`.
+
+        This is a convenience wrapper for
+        :py:meth:`~matplotlib.axes.Axes.loglog` which sets ``basex``,
+        ``basey``, and adds a formatter with a custom label.
+
+        Parameters
+        ----------
+        axes : matplotlib.axes.Axes
+            The axes to plot on.
+        *args :
+            Normal positional arguments to
+            :py:meth:`~matplotlib.axes.Axes.loglog`.
+        basex : float, optional
+            Base of the x-axis log-scale. The default is `numpy.e`.
+        basey : float, optional
+            Base of the y-axis log-scale. The default is `numpy.e`.
+        labelx : str, optional
+            The label to use to show the log base for tick marks in the
+            x-axis. The default is ``'e'``.
+        labely : str, optional
+            The label to use to show the log base for tick marks in the
+            y-axis. The default is ``'e'``.
+        **kwargs :
+            Normal keyword arguments to
+            :py:meth:`~matplotlib.axes.Axes.loglog`.
+
+        Returns
+        -------
+        list of :py:class:`~matplotlib.lines.Line2D`
+            Objects representing the plotted data.
+        """
+        basex, fnx = _log_base_func(basex)
+        basey, fny = _log_base_func(basey)
+
+        if labelx is None:
+            labelx = str(basex)
+        if labely is None:
+            labely = str(basey)
+
+        def xticks(x, pos):
+            return f'${labelx}^{{{fnx(x):.0f}}}$'
+        def yticks(y, pos):
+            return f'${labely}^{{{fny(y):.0f}}}$'
+
+        lines = axes.loglog(*args, basex=basex, basey=basey, **kwargs)
+        axes.xaxis.set_major_formatter(mtick.FuncFormatter(xticks))
+        axes.yaxis.set_major_formatter(mtick.FuncFormatter(yticks))
+        return lines

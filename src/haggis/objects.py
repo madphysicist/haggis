@@ -19,6 +19,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 11 Feb 2021: Added package_root
 
 
 """
@@ -30,13 +31,44 @@ functions, and automatically creating properties.
 
 from copy import copy
 from functools import update_wrapper, WRAPPER_ASSIGNMENTS
+from os.path import basename, dirname
 import sys
 from types import FunctionType, ModuleType
 
 
 __all__ = [
-    'HiddenPropMeta', 'update_module', 'copy_func', 'copy_class'
+    'HiddenPropMeta', 'package_root', 'update_module',
+    'copy_func', 'copy_class'
 ]
+
+
+def package_root(module):
+    """
+    Find the directory containing the root package in which a module is
+    defined.
+
+    Only works for modules with a valid ``__file__`` attribute.
+
+    Parameters
+    ----------
+    module : str or ~types.ModuleType
+        The module to investigate. If a name is passed in, the module
+        must exist in :py:attr:`sys.modules`.
+
+    Return
+    ------
+    path : str
+        The root path of the package containing the module.
+    """
+    if isinstance(module, str):
+        module = sys.modules[module]
+    name = module.__name__
+    path = module.__file__
+    if basename(path) == '__init__.py':
+        path = dirname(path)
+    for _ in range(name.count('.') + 1):
+        path = dirname(path)
+    return path
 
 
 def update_module(current, other, recurse=False):
@@ -142,7 +174,7 @@ def copy_class(c, globals=None, module=None):
     return d
 
 
-def copy_func(f, globals=None, module=None):
+def copy_func(f, globals=None, name=None, module=None):
     """
     Creates a shallow copy of a function object, optionally replacing
     the object it references for its globals.
@@ -151,7 +183,7 @@ def copy_func(f, globals=None, module=None):
     module, and having it behave as a function of the importing module::
 
         from mod import func
-        func = copy_func(func, globals(), __name__)
+        func = copy_func(func, globals(), module=__name__)
 
     Parameters
     ----------
@@ -160,6 +192,9 @@ def copy_func(f, globals=None, module=None):
     globals : dict or None
         If :py:obj:`None`, copy the global dictionary referenced by
         `f`. A popular alternative is ``globals()``.
+    name : str or None
+        The name to assign to the new function. If None, copy
+        ``f.__name__`` directly.
     module : str or None
         The name of the module that this function belongs to. If
         :py:obj:`None`, copy ``f.__module__`` directly. A popular
@@ -170,9 +205,10 @@ def copy_func(f, globals=None, module=None):
     Based originally on https://stackoverflow.com/a/13503277/2988730,
     and updated in https://stackoverflow.com/a/49077211/2988730.
     """
-    g = FunctionType(f.__code__, f.__globals__ if globals is None else globals,
-                     name=f.__name__, argdefs=f.__defaults__,
-                     closure=f.__closure__)
+    g = FunctionType(f.__code__,
+                     f.__globals__ if globals is None else globals,
+                     name=f.__name__ if name is None else name,
+                     argdefs=f.__defaults__, closure=f.__closure__)
     g = update_wrapper(g, f)
     if module is not None:
         g.__module__ = module

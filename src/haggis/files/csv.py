@@ -29,12 +29,13 @@ built-in :py:mod:`csv` module, suitable for ingesting plain text
 arranged in space-separated colmns.
 """
 
+
+__all__ = ['load_as_numbers', 'load_as_columns', 'reformat']
+
+
 import csv, contextlib
 
 import numpy
-
-
-__all__ = ['load_as_numbers', 'load_as_columns', 'reformat']
 
 
 csv.register_dialect('text', skipinitialspace=True, delimiter=' ')

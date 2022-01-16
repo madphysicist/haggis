@@ -20,7 +20,10 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
-
+# Version: 11 Feb 2021: Added mask2runs andruns2mask
+# Version: 05 Mar 2021: Added rms
+# Version: 21 Jul 2021: Added weights and ddof to rms
+# Version: 27 Aug 2021: Added map_array
 
 """
 Math utility functions that are otherwise uncategorized.
@@ -29,11 +32,17 @@ Math utility functions that are otherwise uncategorized.
 import itertools
 import math
 import numpy
+from scipy.stats import iqr
+
+from . import Sentinel
+from .mapping import option_lookup
 
 
 __all__ = [
-        'ellipse', 'full_width_half_max', 'primes_up_to', 'first_primes',
-        'count_divisors', 'round_sig',
+        'ang_diff_abs', 'ang_diff_min', 'ang_diff_pos', 'count_divisors',
+        'ellipse', 'first_primes', 'full_width_half_max', 'map_array',
+        'mask2runs', 'primes_up_to', 'real_divide', 'rms', 'round_sig',
+        'runs2mask', 'threshold',
 ]
 
 
@@ -74,8 +83,8 @@ def ellipse(*args, num_points=1e3, **kwargs):
     counterclockwise about ``(h, k)``.
 
     The number of points is specified by `numPoints`. Points are evenly
-    distributed by angle, not by arc-length (unless the ellipse is a circle).
-    The default number of points is 1000.
+    distributed by angle, not by arc-length (unless the ellipse is a
+    circle). The default number of points is 1000.
 
     Return
     ======
@@ -101,9 +110,8 @@ def ellipse(*args, num_points=1e3, **kwargs):
         if len(args) == 6:
             a, b, c, d, e, f = args
         if kwargs:
-            raise ValueError(
-                'Only num_points can be a keyword for quadratic form of ellipse'
-            )
+            raise ValueError('Only num_points can be a keyword '
+                             'for quadratic form of ellipse')
 
         discriminant = b**2 - 4 * a * c
         if discriminant >= 0.0:
@@ -179,10 +187,10 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
 
     Normally, a single scalar is returned. If `return_points` is
     :py:obj:`True`, however, two two-element tuples are returned as the
-    second and third argument. Each tuple will contain an x-y pair of the
-    intersection coordinates used to approximate the main return value.
-    The first tuple will be for the left (rising) edge and the second
-    will be for the right (trailing) edge.
+    second and third argument. Each tuple will contain an x-y pair of
+    the intersection coordinates used to approximate the main return
+    value. The first tuple will be for the left (rising) edge and the
+    second will be for the right (trailing) edge.
     """
     imax = numpy.argmax(y)
     if factor == 'sigma':
@@ -193,9 +201,13 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
     rising = (y[:imax] <= halfmax) & (y[1:imax + 1] > halfmax)
     falling = (y[imax:-1] > halfmax) & (y[imax + 1:] <= halfmax)
     if not numpy.any(rising):
-        raise ValueError('left edge does not fall below {} of max'.format(factor))
+        raise ValueError(
+            'left edge does not fall below {} of max'.format(factor)
+        )
     if not numpy.any(falling):
-        raise ValueError('right edge does not fall below {} of max'.format(factor))
+        raise ValueError(
+            'right edge does not fall below {} of max'.format(factor)
+        )
     # Select last rising, first falling index.
     # Initial [0] because of nonzero's weird tuple return
     rising_index = numpy.nonzero(rising)[0][-1] + numpy.arange(2)
@@ -203,8 +215,10 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
     if interp == 'linear':
         def linterp(x0, x1, y0, y1, y):
             return x0 + (x1 - x0) * (y - y0) / (y1 - y0)
-        rising = (linterp(*x[rising_index], *y[rising_index], halfmax), halfmax)
-        falling = (linterp(*x[falling_index], *y[falling_index], halfmax), halfmax)
+        rising = (linterp(*x[rising_index], *y[rising_index],halfmax),
+                  halfmax)
+        falling = (linterp(*x[falling_index], *y[falling_index], halfmax),
+                   halfmax)
     elif interp == 'nearest':
         def nearest(ys, inds, y):
             return inds[numpy.argmin(numpy.abs(ys[inds] - y))]
@@ -213,8 +227,10 @@ def full_width_half_max(x, y, factor=0.5, baseline=0.0, interp='linear', *,
         rising = (x[rising_i], y[rising_i])
         falling = (x[falling_i], y[falling_i])
     else:
-        raise ValueError('Invalid value of `interp` parameter. '
-                         'Expected {"linear", "nearest"}, found "{}".'.format(interp))
+        raise ValueError(
+            'Invalid value of `interp` parameter. Expected '
+            '{{"linear", "nearest"}}, found "{}".'.format(interp)
+        )
 
     if return_points:
         return falling[0] - rising[0], rising, falling
@@ -233,8 +249,8 @@ def primes_up_to(n):
     Parameters
     ----------
     n : int
-        The largest number to generate primes up to (exclusive). If you want an
-        inclusive range, add 1 to this input.
+        The largest number to generate primes up to (exclusive). If you
+        want an inclusive range, add 1 to this input.
 
     Return
     ------
@@ -291,3 +307,383 @@ def count_divisors(n):
             count += 1
     # Add one to count because loop does not check if 1/n are factors
     return (count + 1) * 2 + extra
+
+
+def real_divide(a, b, zero=0, out=None):
+    """
+    Divide real numbers, where the second may be zero.
+
+    Parameters
+    ----------
+    a : array-like
+        The divisor.
+    b : array-like
+        The dividend
+    zero :
+        The value to place in locations where `b` is zero.
+    out : array-like or None
+        An array of a suitable type and size to hold the result.
+        If `None`, a new output array is allocated.
+
+    Return
+    ------
+    numpy.ndarray :
+        The result of applying :py:func:`numpy.true_divide` to `a` and
+        `b`, except that elements corresponding to zeros in `b` are set
+        to `zero` instead of actually being computed.
+    """
+    mask = (b != 0)
+    result = numpy.true_divide(a, b, where=mask, out=out)
+    result[~mask] = zero
+    return result
+
+
+_thresholding_directions = {
+    'le': numpy.less_equal,    '<=': numpy.less_equal,
+    'lt': numpy.less,          '<': numpy.less,
+    'ge': numpy.greater_equal, '>=': numpy.greater_equal,
+    'gt': numpy.greater,       '>': numpy.greater,
+}
+
+_thresholding_types = {
+    'std': lambda x, n: numpy.mean(x) + n * numpy.std(x),
+    'iqr': lambda x, n: numpy.median(x) + n * iqr(x),
+    'rms': lambda x, n: n * numpy.sqrt(numpy.square(x).mean()),
+    'raw': lambda x, n: n,
+}
+
+def threshold(arr, thresh=3, type='std', direction='le'):
+    """
+    Apply a threshold to an array (usually an image).
+
+    Parameters
+    ----------
+    arr : array-like
+        The array to threshold.
+    direction : str
+        Which direction is considered passing:
+
+        - ``'le'`` or ``'<='``: Elements of `arr` <= the threshold are
+          marked `True`.
+        - ``'lt'`` or ``'<'``: Elements of `arr` < the threshold are
+          marked `True`.
+        - ``'ge'`` or ``'>='``: Elements of `arr` >= the threshold are
+          marked `True`.
+        - ``'gt'`` or ``'>'``: Elements of `arr` > the threshold are
+          marked `True`.
+
+        The default is ``'le'``.
+    thresh : array-like, optional
+        The threshold value to apply. Must broadcast to the shape of the
+        array. The exact meaning of the value is determined by `type`.
+        The default is ``3`` (for 3-sigma thresholding).
+    type : str, optional
+        The type of threshold to use:
+
+        - ``'std'``: Mean plus `threshold` times standard deviation.
+        - ``'iqr'``: Median plus `threshold` times interqartile range.
+        - ``'rms'``: `threshold` times the root-mean square.
+        - ``None``, ``''``, ``'raw'``: Use `threshold` as-is.
+
+        The default is 'std'.
+
+    Returns
+    -------
+    numpy.ndarray :
+        A boolean array of the same size and shape as `arr`, containing
+        a mask indicating which elements pass threshold.
+    """
+    dmethod = option_lookup('direction', _thresholding_directions,
+                            direction, key_func=str.lower)
+    
+    tmethod = option_lookup('type', _thresholding_types,
+                            type or 'raw', key_func=str.lower)
+
+    arr = numpy.asanyarray(arr)
+
+    return dmethod(arr, tmethod(arr, thresh))
+
+
+def ang_diff_pos(theta1, theta2, full=2.0 * numpy.pi):
+    """
+    Find the positive angular difference from `theta1` to `theta2`,
+    normalized to [0, 2pi).
+
+    The positive difference is the angle going in the positive
+    direction from `theta1` to `theta2`, normalized to be in the range
+    [0, 2pi).
+
+    The return value can be computed without branching as ::
+
+        ang_diff_pos = fmod(fmod(theta2 - theta1, full) + full, full)
+
+    Inputs can be scalars or arrays. Arrays must broadcast together.
+
+    Parameters
+    ----------
+    theta1 : array-like
+        The start angle or angles, in radians.
+    theta2 : array-like
+        The end angle or angles, in radians.
+    full : float
+        The period of a full circle. Defaults to 2pi. Use 360 for data
+        in degrees, 400 for gradians, 6400 for mils, etc.
+
+    Returns
+    -------
+    numpy.ndarray :
+        An array containing the broadcasted positive normalized
+        difference of the two inputs.
+    """
+    return numpy.fmod(numpy.fmod(theta2 - theta1, full) + full, full)
+
+
+def ang_diff_min(theta1, theta2, full=2.0 * numpy.pi):
+    """
+    Find the angular difference from `theta1` to `theta2`, with the
+    minimum absolute value normalized to [-pi, pi).
+
+    The positive difference is the angle going in the positive
+    direction from `theta1` to `theta2`, normalized to be in the range
+    [0, 2pi). The negative difference is the angle going in the negative
+    direction. This function returns the smaller of the two by absolute
+    value.
+
+    The return value can be computed without branching by rotating by
+    half a circle before applying the moduli, then rotating back::
+
+        ang_diff_min = fmod(fmod(theta2 - theta1 + 0.5 * full, full) +
+                            full, full) - 0.5 * full
+
+    Inputs can be scalars or arrays. Arrays must broadcast together.
+
+    Parameters
+    ----------
+    theta1 : array-like
+        The start angle or angles, in radians.
+    theta2 : array-like
+        The end angle or angles, in radians.
+    full : float
+        The period of a full circle. Defaults to 2pi. Use 360 for data
+        in degrees, 400 for gradians, 6400 for mils, etc.
+
+    Returns
+    -------
+    numpy.ndarray :
+        An array containing the broadcasted sign-preserving normalized
+        difference of the two inputs with the smallest absolute value.
+    """
+    half = 0.5 * full
+    # Broken out for readability
+    step1 = numpy.fmod(theta2 - theta1 + half, full)
+    return numpy.fmod(step1 + full, full) - half
+
+
+def ang_diff_abs(theta1, theta2, full=2.0 * numpy.pi):
+    """
+    Find the absolute value of the minimum angular difference from
+    `theta1` to `theta2`, normalized to [0, pi).
+
+    The minimum absolute difference is the smallest angle to get from
+    `theta1` to `theta2` going in either direction, normalized to be in
+    the range [0, pi).
+
+    The return value can be computed without branching as ::
+
+        ang_diff_abs = abs(ang_diff_min(theta1, theta2, full))
+
+    Inputs can be scalars or arrays. Arrays must broadcast together.
+
+    Parameters
+    ----------
+    theta1 : array-like
+        The start angle or angles, in radians.
+    theta2 : array-like
+        The end angle or angles, in radians.
+    full : float
+        The period of a full circle. Defaults to 2pi. Use 360 for data
+        in degrees, 400 for gradians, 6400 for mils, etc.
+
+    Returns
+    -------
+    numpy.ndarray :
+        An array containing the broadcasted minimum absolute normalized
+        difference of the two inputs.
+    """
+    return numpy.abs(ang_diff_min(theta1, theta2, full))
+
+
+def mask2runs(mask, return_lengths=False, return_borders=False):
+    """
+    Find the runs in a boolean mask.
+
+    Parameters
+    ----------
+    mask : array-like
+        Boolean mask. If not boolean, will be cast to bool.
+    return_lengths : bool, optional
+        Whether or not to return an array of lengths for each run.
+    return_borders : bool, optional
+        Whether or not to return an array of dtype `np.int8` containing
+        1 at each run start and -1 past run ends. The default is False.
+
+    Returns
+    -------
+    regions : numpy.ndarray (2, N)
+        Array of indices for each run. First column is the location of
+        the run start, second column is past the run end.
+    borders : numpy.ndarray (mask.shape)
+        Array of :py:obj:`numpy.int8` containing 1 at each run start,
+        -1 past each run end, and zero elsewhere. Only returned if
+        ``return_borders`` is `True`. ``np.cumsum(borders).view(bool)``
+        is equivalent to ``mask``.
+    """
+    mask = numpy.asanyarray(mask).astype(bool, copy=False)
+    borders = numpy.diff(numpy.r_[numpy.int8(0),
+                                  mask.view(numpy.int8),
+                                  numpy.int8(0)])
+    indices = numpy.flatnonzero(borders).reshape(-1, 2)
+
+    if return_lengths:
+        lengths = numpy.diff(indices, axis=1).ravel()
+        if return_borders:
+            return indices, lengths, borders
+        return indices, lengths
+    elif return_borders:
+        return indices, borders
+    return indices
+
+
+def runs2mask(runs, n=None):
+    """
+    Convert an Nx2 array of run indices, such as the return of
+    :py:func:`mask2runs` into a boolean mask of size `n`.
+
+    Parameters
+    ----------
+    runs : array-like
+        A two-column array, the first column being inclusive start
+        indices for each run, and the second being exclusive stop
+        indices.
+    n : int, optional
+        The size of the mask to generate. If missing (None), the
+        end of the last run is assumed (``runs[-1, 1]``).
+
+    Return
+    ------
+    mask : numpy.ndarray
+        A boolean array of length ``n`` with runs set to True.
+    """
+    runs = numpy.asanyarray(runs)
+    if n is None:
+        n = runs[-1, 1]
+    mask = numpy.zeros(n, dtype=bool)
+    view = mask.view(numpy.int8)
+
+    # Assign start indices
+    view[runs[:, 0]] = 1
+
+    # Assign end indices
+    ends = runs[:, 1]
+    if ends[-1] == n:
+        ends = ends[:-1]
+    view[ends] = -1
+
+    numpy.cumsum(view, out=view)
+    return mask
+
+
+def rms(arr, axis=None, bias=0, weights=None, ddof=0, out=None):
+    """
+    Comute the root-mean-square (RMS) of an array about an arbitrary
+    bias.
+
+    Parameters
+    ----------
+    arr : array-like
+        The input array.
+    axis : int or tuple or None, optional
+        The axis or axes to compute the RMS along. The average of the
+        squares will be taken along this axis or axes. None (the
+        default) indicates the entire raveled array.
+    bias : array-like, optional
+        The offset about which to compute the RMS. The default is zero
+        for standard RMS. The bias must broadcast to `arr`. Setting
+        ``bias=numpy.mean(arr, axis=axis, keepdims=True)`` is equivalent
+        to computing ``numpy.std(arr, axis=axis)``.
+    weights : array-like, optional
+        The weights to apply in the mean portion. Similar behavior to
+        :py:func:`numpy.average`. Assumed to be all ones if omitted. If
+        `axis` is None, must broadcast to `arr`. Otherwise, must be
+        the same shape as either `arr[axis]` or `arr`.
+    ddof : scalar, optional
+        The degrees of freedom to subtract from the denominator. Defaults
+        to zero.
+    out : numpy.ndarray or None, optional
+        The array to output results into, if not None. Use carefully,
+        as *all* intermediate calculations will be placed into this
+        array: a square, a mean and a square root. Using an output of
+        an inappropriate type may lead to errors. The default is None.
+
+    Return
+    ------
+    rms : numpy.ndarray
+        The RMS of `arr` about `bias` along `axis`.
+    """
+    sq = numpy.square(numpy.asanyarray(arr) - bias, out=out)
+    weights = numpy.array([1]) if weights is None \
+                                            else numpy.asanyarray(weights)
+    if axis is None:
+        sq = sq.ravel()
+        weights = weights.ravel()
+    else:
+        axis = numpy.core.multiarray.normalize_axis_index(axis, sq.ndim)
+        if weights.ndim < sq.ndim:
+            weights = numpy.reshape(weights,
+                                    weights.shape + (1,) * (sq.ndim - axis - 1))
+    weights = numpy.broadcast_to(weights, sq.shape)
+    return numpy.sqrt(numpy.sum(sq * weights, axis=axis, out=out) / (weights.sum(axis=axis) - ddof), out=out)
+
+
+def map_array(map, arr, value=None, default=Sentinel):
+    """
+    Convert the elements of a numpy array using a mapping.
+
+    The implementation uses looping to interface between the python and
+    numpy datasets, but is as efficient as possible under the
+    circumstaces. Intended for mapping a small number of arbitrary
+    labels to some alternative value.
+
+    Parameters
+    ----------
+    map : Mapping
+        The mapping to apply. Any object with a `get` method that
+        supports default values is accepted.
+    arr : array-like
+        The array to convert.
+    value : callable, optional
+        A function to apply to the dictionary values before placing in
+        the output array. The default is a no-op.
+    default :
+        The value to use for array elements not in `mapping`. The
+        default is to raise a `KeyError`. `None` is interpreted as a
+        valid default.
+
+    Returns
+    -------
+    mapped_array : array-like
+        An array of the same shape as `arr`, with elements transformed
+        according to the mapping.
+    """
+    def get(key):
+        v = map.get(key, default)
+        if v is Sentinel:
+            raise KeyError(key)
+        return v
+
+    unq, ind = numpy.unique(arr, return_inverse=True)
+    if value:
+        vals = [value(get(u)) for u in unq]
+    else:
+        vals = [get(u) for u in unq]
+    return numpy.array(vals)[ind]

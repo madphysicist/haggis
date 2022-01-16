@@ -40,10 +40,10 @@ A small import-guarded block is provided to demo :py:func:`ps_to_image`.
 .. include:: /link-defs.rst
 """
 
-import subprocess, io, shutil
-
-
 __all__ = ['gs_exe', 'ps_to_image']
+
+
+import subprocess, io, shutil
 
 
 #: The name of the :program:`gs` executable. Either a full path, or a

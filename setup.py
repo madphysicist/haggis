@@ -56,6 +56,8 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
     'Topic :: Software Development :: Libraries',
     'Topic :: System :: Console Fonts',
     'Topic :: System :: Logging',
@@ -121,7 +123,7 @@ def long_description():
     Reads in the README and CHANGELOG files, separated by two
     newlines.
     """
-    with open('README') as readme, open('CHANGELOG') as changes:
+    with open('README.md') as readme, open('CHANGELOG') as changes:
         return '%s\n\n%s' % (readme.read(), changes.read())
 
 
@@ -170,6 +172,6 @@ if __name__ == '__main__':
         },
         provides=['haggis'],
         tests_require=['pytest'],
-        data_files = [('', ['LICENSE', 'README'])],
+        data_files = [('', ['LICENSE', 'README.md'])],
         cmdclass=COMMANDS,
     )
