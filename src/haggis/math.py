@@ -408,13 +408,13 @@ def threshold(arr, thresh=3, type='std', direction='le'):
 
 
 def ang_diff_pos(theta1, theta2, full=2.0 * numpy.pi):
-    """
+    r"""
     Find the positive angular difference from `theta1` to `theta2`,
-    normalized to [0, 2pi).
+    normalized to :math:`[0, 2 \pi)`.
 
     The positive difference is the angle going in the positive
     direction from `theta1` to `theta2`, normalized to be in the range
-    [0, 2pi).
+    :math:`[0, 2 \pi)`.
 
     The return value can be computed without branching as ::
 
@@ -429,8 +429,8 @@ def ang_diff_pos(theta1, theta2, full=2.0 * numpy.pi):
     theta2 : array-like
         The end angle or angles, in radians.
     full : float
-        The period of a full circle. Defaults to 2pi. Use 360 for data
-        in degrees, 400 for gradians, 6400 for mils, etc.
+        The period of a full circle. Defaults to :math:`2 \pi`. Use 360
+        for data in degrees, 400 for gradians, 6400 for mils, etc.
 
     Returns
     -------
@@ -442,15 +442,15 @@ def ang_diff_pos(theta1, theta2, full=2.0 * numpy.pi):
 
 
 def ang_diff_min(theta1, theta2, full=2.0 * numpy.pi):
-    """
+    r"""
     Find the angular difference from `theta1` to `theta2`, with the
-    minimum absolute value normalized to [-pi, pi).
+    minimum absolute value normalized to :math:`[-\pi, \pi)`.
 
     The positive difference is the angle going in the positive
     direction from `theta1` to `theta2`, normalized to be in the range
-    [0, 2pi). The negative difference is the angle going in the negative
-    direction. This function returns the smaller of the two by absolute
-    value.
+    :math:`[0, 2 \pi)`. The negative difference is the angle going in
+    the negative direction. This function returns the smaller of the
+    two by absolute value.
 
     The return value can be computed without branching by rotating by
     half a circle before applying the moduli, then rotating back::
@@ -467,8 +467,8 @@ def ang_diff_min(theta1, theta2, full=2.0 * numpy.pi):
     theta2 : array-like
         The end angle or angles, in radians.
     full : float
-        The period of a full circle. Defaults to 2pi. Use 360 for data
-        in degrees, 400 for gradians, 6400 for mils, etc.
+        The period of a full circle. Defaults to :math:`2 \pi`. Use 360
+        for data in degrees, 400 for gradians, 6400 for mils, etc.
 
     Returns
     -------
@@ -483,13 +483,13 @@ def ang_diff_min(theta1, theta2, full=2.0 * numpy.pi):
 
 
 def ang_diff_abs(theta1, theta2, full=2.0 * numpy.pi):
-    """
+    r"""
     Find the absolute value of the minimum angular difference from
-    `theta1` to `theta2`, normalized to [0, pi).
+    `theta1` to `theta2`, normalized to :math:`[0, \pi)`.
 
     The minimum absolute difference is the smallest angle to get from
     `theta1` to `theta2` going in either direction, normalized to be in
-    the range [0, pi).
+    the range :math:`[0, \pi)`.
 
     The return value can be computed without branching as ::
 
@@ -504,8 +504,8 @@ def ang_diff_abs(theta1, theta2, full=2.0 * numpy.pi):
     theta2 : array-like
         The end angle or angles, in radians.
     full : float
-        The period of a full circle. Defaults to 2pi. Use 360 for data
-        in degrees, 400 for gradians, 6400 for mils, etc.
+        The period of a full circle. Defaults to :math:`2 \pi`. Use 360
+        for data in degrees, 400 for gradians, 6400 for mils, etc.
 
     Returns
     -------
