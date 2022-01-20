@@ -143,7 +143,7 @@ if __name__ == '__main__':
         url='https://github.com/madphysicist/haggis',
         project_urls={
             'Bugs': 'https://github.com/madphysicist/haggis/issues',
-            'Documentation': 'https://haggis.readthedocs.io/en/latest/',
+            'Documentation': 'https://haggis.readthedocs.io/en/stable/',
         },
         packages=[
             'haggis',
