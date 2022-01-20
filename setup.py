@@ -148,6 +148,8 @@ if __name__ == '__main__':
         packages=[
             'haggis',
             'haggis.files',
+            'haggis.tests',
+            'haggis.files.tests',
         ],
         package_dir={'': 'src'},
         package_data={'haggis.files': ['_resources/*.XSL']},
