@@ -172,6 +172,6 @@ if __name__ == '__main__':
         },
         provides=['haggis'],
         tests_require=['pytest'],
-        data_files = [('', ['LICENSE', 'README.md'])],
+        data_files = [('', ['LICENSE', 'README.md', 'CHANGELOG'])],
         cmdclass=COMMANDS,
     )
