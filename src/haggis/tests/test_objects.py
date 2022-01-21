@@ -112,3 +112,17 @@ class TestGetsizeof:
                                      sys.getsizeof('f') + sys.getsizeof(6)
         )
         assert getsizeof(obj) == size
+
+    def test_ndarray(self):
+        dtype1 = numpy.dtype([('a', '<f4'), ('b', 'O', 3), ('c', '<i4')])
+        dtype2 = numpy.dtype([('d', bool, 3), ('e', dtype1, 2), ('f', 'O')])
+        obj = numpy.empty((2, 2), dtype=dtype2)
+        obj['e']['b'] = ['xxx', 'yyy', 'zzz']
+        obj['f'] = [['a', 'b'], ['c', 'd']]
+
+        size = (
+            sys.getsizeof(obj) + sys.getsizeof('xxx') + sys.getsizeof('yyy') +
+            sys.getsizeof('zzz') + sys.getsizeof('a') + sys.getsizeof('b') +
+            sys.getsizeof('c') + sys.getsizeof('d')
+        )
+        assert getsizeof(obj) == size
