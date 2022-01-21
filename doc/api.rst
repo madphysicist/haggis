@@ -25,18 +25,6 @@
 API Docs
 ========
 
-.. automodule:: haggis
-   :members:
-
-   ----------
-   Attributes
-   ----------
-
-   .. attribute:: __version__
-
-      The current version is |release|.
-
-
 .. _api-contents:
 
 --------------------
@@ -45,6 +33,7 @@ Modules and Packages
 
 .. autosummary::
 
+   haggis
    haggis.configuration
    haggis.ctypes_util
    haggis.exceptions
@@ -71,6 +60,22 @@ Modules and Packages
    haggis.structures
    haggis.threads
    haggis.time
+
+
+-----------------------
+``haggis`` root package
+-----------------------
+
+.. automodule:: haggis
+   :members:
+
+   ----------
+   Attributes
+   ----------
+
+   .. attribute:: __version__
+
+      The current version is |release|.
 
 
 ------------------------
