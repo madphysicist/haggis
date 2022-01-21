@@ -4,6 +4,8 @@ Changelog
 0.2.0 (?)
 ---------
 
+* New functions and classes:
+  - getsizeof, size_type_mapping in objects
 * Added docs to sdist
 
 

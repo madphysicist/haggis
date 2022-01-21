@@ -29,6 +29,8 @@ This includes things like spoofing module contents, copying classes and
 functions, and automatically creating properties.
 """
 
+from array import array
+from collections.abc import Mapping, Iterable
 from copy import copy
 from functools import update_wrapper, WRAPPER_ASSIGNMENTS
 from os.path import basename, dirname
@@ -37,9 +39,95 @@ from types import FunctionType, ModuleType
 
 
 __all__ = [
-    'HiddenPropMeta', 'package_root', 'update_module',
-    'copy_func', 'copy_class'
+    'HiddenPropMeta', 'copy_func', 'copy_class', 'getsizeof',
+    'package_root', 'size_type_mapping', 'update_module',
 ]
+
+
+#: List mapping of types to the special processing routines required to
+#: support them with :py:func:`getsizeof`.
+#:
+#: Types are checked from the end of the list. The first element is
+#: :py:class:`~collections.abc.Iterable`, which is the universal
+#: catchall. Custom types should be appended to the end.
+#:
+#: The following types are supported out of the box:
+#:
+#: - :py:class:`~collections.abc.Iterable`
+#: - :py:class:`~collections.abc.Mapping`
+#: - :py:class:`str`, :py:class:`bytes`, :py:class:`bytearray`,
+#:   :py:class:`array.array`
+#: - :py:class:`numpy.ndarray`
+#:
+#: The list contains two-element tuples, as would be used to initialize
+#: a :py:class:`dict`. The first element can be a scalar type or tuple
+#: of types. The second element may be `None`, indicaing a passthrough
+#: to :py:func:`sys.getsizeof`, or a callable accepting an object and a
+#: low-level function. A callable must have the following signature::
+#:
+#:     type_handler(obj, recurse)
+#:
+#: `type_handler` must apply the function `recurse` to each element of
+#: the container, and report the sum of the returned values. It must not
+#: include the size of `obj` itself.
+size_type_mapping = [
+    (Iterable, lambda x, f: sum(f(e) for e in x)),
+    (Mapping, lambda x, f: sum(f(k) + f(v) for k, v in x.items())),
+    ((str, bytes, bytearray, array), None),
+]
+
+
+def getsizeof(obj):
+    """
+    Recursive version of :py:func:`sys.getsizeof` for handling
+    iterables and mappings.
+
+    Supports automatic circular reference detection, and does not
+    double-count repeated references. String and array types get
+    special treatement: they are iterable, but not processed
+    recursively because their size already includes the buffer. The
+    following types are treated as array types:
+
+    - :py:class:`str`
+    - :py:class:`bytes`
+    - :py:class:`bytearray`
+    - :py:class:`array.array`
+    - :py:class:`numpy.ndarray`
+
+    Additional array/string-like types may be added by appending them
+    to the module-level tuple :py:attr:`size_type_mapping`. Numpy
+    arrays require special treatment because they can contain
+    references to other objects nested at arbitrarily deep levels of
+    the datatype.
+
+    References are not fully supported yet, but a custom handler can
+    be added to :py:attr:`size_type_mapping`.
+
+    Parameters
+    ----------
+    obj :
+        The object whose size is to be computed.
+
+    Return
+    ------
+    size : int
+        The size of the object and all the references it contains.
+        This is especially useful for container types.
+    """
+    seen = set()
+    def recurse(obj):
+        x = id(obj)
+        if x in seen:
+            return 0
+        seen.add(x)
+        size = sys.getsizeof(obj)
+        for type, method in reversed(size_type_mapping):
+            if isinstance(obj, type):
+                if method is not None:
+                    size += method(obj, recurse)
+                break
+        return size
+    return recurse(obj)
 
 
 def package_root(module):
