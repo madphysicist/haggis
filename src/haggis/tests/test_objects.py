@@ -26,6 +26,8 @@ Tests for the :py:mod:`haggis.objects` module.
 """
 
 from array import array
+from itertools import islice, product
+from string import ascii_lowercase
 import sys
 
 import numpy
@@ -113,16 +115,25 @@ class TestGetsizeof:
         )
         assert getsizeof(obj) == size
 
-    def test_ndarray(self):
-        dtype1 = numpy.dtype([('a', '<f4'), ('b', 'O', 3), ('c', '<i4')])
-        dtype2 = numpy.dtype([('d', bool, 3), ('e', dtype1, 2), ('f', 'O')])
-        obj = numpy.empty((2, 2), dtype=dtype2)
-        obj['e']['b'] = ['xxx', 'yyy', 'zzz']
-        obj['f'] = [['a', 'b'], ['c', 'd']]
+    from .. import objects
+    if hasattr(objects, 'ndarray_handler'):
+        def test_ndarray(self):
+            dtype1 = numpy.dtype([('a', '<f4'), ('b', 'O', 3), ('c', '<i4')])
+            dtype2 = numpy.dtype([('d', bool, 3), ('e', dtype1, (2, 2)), ('f', 'O')])
 
-        size = (
-            sys.getsizeof(obj) + sys.getsizeof('xxx') + sys.getsizeof('yyy') +
-            sys.getsizeof('zzz') + sys.getsizeof('a') + sys.getsizeof('b') +
-            sys.getsizeof('c') + sys.getsizeof('d')
-        )
-        assert getsizeof(obj) == size
+            obj = numpy.empty((2, 2), dtype=dtype2)
+
+            n = 2 * 2 * 2 * 2 * 3
+            # Ensure each string is different regardless of interning
+            obj['e']['b'] = numpy.array(
+                    list(''.join(e) for e in islice(
+                            product(ascii_lowercase, repeat=2), None, n
+                    ))
+            ).reshape(2, 2, 2, 2, 3)
+            # Ensure some references are copied 2 times
+            obj['f'] = ['a', 'b']
+
+            size = (sys.getsizeof(obj) +
+                    n * sys.getsizeof('zz') +
+                    2 * sys.getsizeof('z'))
+            assert getsizeof(obj) == size

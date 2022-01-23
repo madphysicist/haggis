@@ -30,9 +30,10 @@ functions, and automatically creating properties.
 """
 
 from array import array
-from collections.abc import Mapping, Iterable
+from collections.abc import Iterable, Mapping
 from copy import copy
 from functools import update_wrapper, WRAPPER_ASSIGNMENTS
+from itertools import chain
 from os.path import basename, dirname
 import sys
 from types import FunctionType, ModuleType
@@ -49,7 +50,8 @@ __all__ = [
 #:
 #: Types are checked from the end of the list. The first element is
 #: :py:class:`~collections.abc.Iterable`, which is the universal
-#: catchall. Custom types should be appended to the end.
+#: catchall. Later elements are more specific types. Custom types
+#: should be appended to the end.
 #:
 #: The following types are supported out of the box:
 #:
@@ -62,22 +64,82 @@ __all__ = [
 #: The list contains two-element tuples, as would be used to initialize
 #: a :py:class:`dict`. The first element can be a scalar type or tuple
 #: of types. The second element may be `None`, indicaing a passthrough
-#: to :py:func:`sys.getsizeof`, or a callable accepting an object and a
-#: low-level function. A callable must have the following signature::
+#: to :py:func:`sys.getsizeof`, or a callable accepting an object of
+#: the correct type, returning an iterable of elements in any order.
+#: The callable only needs to iterate the top-level elements.
 #:
-#:     type_handler(obj, recurse)
-#:
-#: `type_handler` must apply the function `recurse` to each element of
-#: the container, and report the sum of the returned values. It must not
-#: include the size of `obj` itself.
+#: Permanently register handlers by appending the appropriate tuple to
+#: this list. Temporarily register them by using the `handlers`
+#: argument to :py:func:`getsizeof`.
 size_type_mapping = [
-    (Iterable, lambda x, f: sum(f(e) for e in x)),
-    (Mapping, lambda x, f: sum(f(k) + f(v) for k, v in x.items())),
+    (Iterable, iter),
+    (Mapping, lambda m: (e for i in m.items() for e in i)),
     ((str, bytes, bytearray, array), None),
 ]
 
 
-def getsizeof(obj):
+try:
+    import numpy
+except ImportError:
+    pass
+else:
+    def ndarray_handler(x):
+        """
+        Yield all the elements of the array that are objects.
+
+        Structured dtypes are parsed field-by-fiels, with proper
+        handling of nested structures.
+
+        Parameter
+        ---------
+        x : numpy.ndarray
+            The array to parse.
+
+        Return
+        ------
+        elem :
+            A generator of all the elements of `x` that have dtype code
+            ``'O'``.
+        """
+        def dfs(x):
+            """
+            DFS chosen because nested datatypes are expected to be of
+            limited deoth, and because it's most likely to return the
+            fields and subarrays in order of increasing offset.
+
+            Parameter
+            ---------
+            x : numpy.ndarray
+                An array potentially containing objects.
+
+            Return
+            ------
+            elem :
+                An generator chaining the elements of the array that
+                are objects together.
+            """
+            dtype = x.dtype
+            if not dtype.hasobject:
+                return
+
+            # Structure
+            if dtype.fields is not None:
+                for name in dtype.fields:
+                    yield from dfs(x[name])
+            # Array
+            elif dtype.subdtype is not None:
+                for i in numpy.arange(numpy.prod(dtype.shape)):
+                    yield from dfs(x[i])
+            # Primitive
+            else:
+                yield from map(numpy.ndarray.item, numpy.nditer(x, flags=['refs_ok']))
+
+        yield from dfs(x)
+
+    size_type_mapping.append((numpy.ndarray, ndarray_handler))
+
+
+def getsizeof(obj, handlers=None, default=sys.getsizeof(int)):
     """
     Recursive version of :py:func:`sys.getsizeof` for handling
     iterables and mappings.
@@ -101,30 +163,68 @@ def getsizeof(obj):
     the datatype.
 
     References are not fully supported yet, but a custom handler can
-    be added to :py:attr:`size_type_mapping`.
+    be added to :py:attr:`size_type_mapping`. Object attributes are not
+    directly accounted for: it's an object's responsibility to report
+    them via :py:meth:`~object.__sizeof__`.
 
     Parameters
     ----------
     obj :
         The object whose size is to be computed.
+    handlers : None, Iterable[tuple[type, callable]], Mapping
+        Mapping of types to handler functions, or list of tuples
+        containing type-handler pairs. Items are iterated in reverse
+        order, so place more specific types last. Callables must
+        accept the object whose elements are to be sized, and return
+        an iterable of the top-level elements.
+    default : int
+        The default size to use for objects that do not support a
+        :py:meth:`~object.__sizeof__` operation. Default:
+        ``sys.getsizeof(int)``.
 
     Return
     ------
     size : int
         The size of the object and all the references it contains.
         This is especially useful for container types.
+
+    Notes
+    -----
+    This recipe is inspired by Raymond Hettinger's "Compute Memory
+    footprint of an object and its contents" available at
+    https://github.com/ActiveState/recipe-577504-compute-mem-footprint
+    and https://code.activestate.com/recipes/577504/. This function was
+    originally written at https://stackoverflow.com/a/70793151/2988730.
+    Things I took from Raymond's recipe after the fact:
+
+    - Making handlers iterate through the elements instead of applying
+      the original recursion function directly.
+    - Using a default value.
+    - Accepting a mapping of extra handlers.
+
+    Things I added:
+
+    - Proper handling of strings, bytes and bytearrays
+    - Numpy array handler
+    - Global type registry
     """
+    if handlers is None:
+        handlers = ()
+    elif isinstance(handlers, Mapping):
+        handlers = handlers.items()
+
     seen = set()
     def recurse(obj):
         x = id(obj)
         if x in seen:
             return 0
         seen.add(x)
-        size = sys.getsizeof(obj)
-        for type, method in reversed(size_type_mapping):
+        size = sys.getsizeof(obj, default)
+        for type, method in chain(handlers, reversed(size_type_mapping)):
             if isinstance(obj, type):
                 if method is not None:
-                    size += method(obj, recurse)
+                    for elem in method(obj):
+                        size += recurse(elem)
                 break
         return size
     return recurse(obj)

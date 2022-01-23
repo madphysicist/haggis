@@ -7,8 +7,10 @@ Changelog
 * New modules:
   - npy_util
   - tests.test_numbers
+  - tests.test_objects
 * New functions and classes:
   - getsizeof, size_type_mapping in objects
+  - ndarray_handler added to size_type_mapping in objects
   - isolate_dtype in npy_util
   - as_base, digit_count in numbers
 * Added docs to sdist
