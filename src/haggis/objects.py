@@ -163,9 +163,11 @@ def getsizeof(obj, handlers=None, default=sys.getsizeof(int)):
     the datatype.
 
     References are not fully supported yet, but a custom handler can
-    be added to :py:attr:`size_type_mapping`. Object attributes are not
-    directly accounted for: it's an object's responsibility to report
-    them via :py:meth:`~object.__sizeof__`.
+    be added to :py:attr:`size_type_mapping`. Object attributes have
+    only rudimentary support via recursion into ``__dict__`` and
+    ``__slots__`` (not necessarily mutually exclusive). Additional
+    support is available via custom implementations of
+    :py:meth:`~object.__sizeof__`, or through custom handlers.
 
     Parameters
     ----------
@@ -209,6 +211,7 @@ def getsizeof(obj, handlers=None, default=sys.getsizeof(int)):
     - Proper handling of strings, bytes and bytearrays
     - Numpy array handler
     - Global type registry
+    - Support for `__dict__` and `__slots__`
     """
     if handlers is None:
         handlers = ()
@@ -230,7 +233,14 @@ def getsizeof(obj, handlers=None, default=sys.getsizeof(int)):
                     for elem in method(obj):
                         size += recurse(elem)
                 break
+
+        if hasattr(obj, '__dict__'):
+            size += recurse(vars(obj))
+        for slot in getattr(obj, '__slots__', ()):
+            if hasattr(obj, slot):
+                size += recurse(getattr(obj, slot))
         return size
+
     return recurse(obj)
 
 
