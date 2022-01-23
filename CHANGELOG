@@ -6,9 +6,11 @@ Changelog
 
 * New modules:
   - npy_util
+  - tests.test_numbers
 * New functions and classes:
   - getsizeof, size_type_mapping in objects
   - isolate_dtype in npy_util
+  - as_base, digit_count in numbers
 * Added docs to sdist
 * Moved map_array from math to npy_util
 

@@ -19,16 +19,123 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 22 Jan 2022: Added as_base, digit_count
 
 
 """
 Various written-language related routines pertaining to numbers.
 """
 
-__all__ = ['english', 'metric_prefix']
+__all__ = ['as_base', 'digit_count', 'english', 'metric_prefix']
 
 
-from math import log10, ceil, floor
+from string import ascii_uppercase, digits as ascii_digits
+from math import log, log10, ceil, floor
+from operator import index
+
+
+def as_base(n, base=10, letters=True, sign=True):
+    """
+    Convert integer `n` to representation as `base`.
+
+    For bases 36 and under, digits 10 or larger can be represented by
+    English letters in range A-Z. For larger bases, the output must be
+    a list.
+
+    Only absolute value of the number is coverted. For string
+    representations, a ``-`` symbol can be prepended. Otherwise, it is
+    the user's responsibility to handle sign.
+
+    Parameters
+    ----------
+    n : int
+        The number to represent.
+    base : int
+        The base of representation. Must be a positive integer.
+        Special case of 1 is allowed.
+    letters : bool, optional
+        If True, represent digits larger than 9 with ASCII uppercase
+        letters and return a string. If ``base > 36``, this parameter
+        is ignored (implicitly False).
+    sign : bool, optional
+        Prepend a minus sign if returning a string and `n` is negative.
+        Ignored if ``letters is False`` or ``base > 36``.
+
+    Return
+    ------
+    num : str or list[int]
+        If ``letters is True`` and ``base <= 36``, this is a string
+        representation of `num` in `base` with optional sign.
+        Otherwise, it is a list of digits from highest to lowest,
+        ignoring sign.
+
+    Notes
+    -----
+    Inspired by https://stackoverflow.com/a/28666223/2988730
+    """
+    base = int(base)
+    if base < 1:
+        raise ValueError('Illegal negative base')
+
+    n = int(n) if isinstance(n, str) else index(n)
+    if n < 0:
+        s = True
+        n = -n
+    else:
+        s = False
+
+    if n == 0:
+        digits = [0]
+    elif base == 1:
+        digits = [1] * abs(n)
+    else:
+        digits = []
+        while n:
+            digits.append(n % base)
+            n //= base
+        digits = digits[::-1]
+
+    if base <= 36 and letters:
+        digits = ''.join(ascii_uppercase[d - 10]
+                                if d >= 10 else ascii_digits[d]
+                                       for d in digits)
+        if sign and s:
+            digits = '-' + digits
+
+    return digits
+
+
+def digit_count(n, base=10):
+    """
+    Compute the number of digits required to represent an integer in a
+    given base, ignoring sign.
+
+    All numbers have at least one digit except zero. The sign is
+    removed when counting digits.
+
+    Parameters
+    ----------
+    n : int
+        A number.
+    base : int
+        The base to compute the digit count of `n` in.
+
+    Return
+    ------
+    The number of digits in `n` when represented in `base`.
+
+    Notes
+    -----
+    For string representations, count zero as a digit using::
+
+        max(digit_count(n, base), 1)
+
+    """
+    n = index(n)
+    base = index(base)
+    if base == 1:
+        return n
+    return ceil(log(n + 1, base))
 
 
 #: Written representation of numbers [0, 10).
