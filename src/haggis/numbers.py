@@ -182,7 +182,7 @@ _default_suffix = 'th'
 
 
 def english(num, mode='basic', hyphens=True, one_is_a=False, format='d'):
-    """
+    r"""
     Convert non-negative integer into its (mostly British) English
     equivalent.
 
@@ -380,7 +380,7 @@ _metric_prefixes = {
 
 
 def metric_prefix(num, long=False, eng=False):
-    """
+    r"""
     Return a number and the letter that represents its metric prefix.
 
     Prefixes are recognized in powers of 10\ :sup:`3` between
