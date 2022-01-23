@@ -4,9 +4,13 @@ Changelog
 0.2.0 (?)
 ---------
 
+* New modules:
+  - npy_util
 * New functions and classes:
   - getsizeof, size_type_mapping in objects
+  - isolate_dtype in npy_util
 * Added docs to sdist
+* Moved map_array from math to npy_util
 
 
 0.1.1 (2022-01-16)
