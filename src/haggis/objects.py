@@ -176,7 +176,9 @@ def getsizeof(obj, handlers=None, default=sys.getsizeof(int)):
         containing type-handler pairs. Items are iterated in reverse
         order, so place more specific types last. Callables must
         accept the object whose elements are to be sized, and return
-        an iterable of the top-level elements.
+        an iterable of the top-level elements. Any handlers speciied
+        through this argument supersede defaults set in
+        :py:attr:`size_type_mapping`.
     default : int
         The default size to use for objects that do not support a
         :py:meth:`~object.__sizeof__` operation. Default:
@@ -220,7 +222,9 @@ def getsizeof(obj, handlers=None, default=sys.getsizeof(int)):
             return 0
         seen.add(x)
         size = sys.getsizeof(obj, default)
-        for type, method in chain(handlers, reversed(size_type_mapping)):
+
+        for type, method in chain(reversed(handlers),
+                                  reversed(size_type_mapping)):
             if isinstance(obj, type):
                 if method is not None:
                     for elem in method(obj):

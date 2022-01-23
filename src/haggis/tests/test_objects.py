@@ -115,6 +115,23 @@ class TestGetsizeof:
         )
         assert getsizeof(obj) == size
 
+    def test_handlers(self):
+        """
+        Verify that handler are more specific than registered classes.
+        """
+        def tup_handler(t):
+            yield from (x * 3 for x in t)
+
+        obj = [((), 33), ('b', ['c'])]
+        # Warning: sys.getsizeof(3 * ['c']) < sys.getsizeof(['c', 'c', 'c'])
+        size = (
+            sys.getsizeof(obj) + 2 * sys.getsizeof((None, None)) +
+            sys.getsizeof(()) + sys.getsizeof(99) +
+            sys.getsizeof('bbb') +
+                sys.getsizeof(['c'] * 3) + sys.getsizeof('c')
+        )
+        assert getsizeof(obj, handlers=[(tuple, tup_handler)]) == size
+
     from .. import objects
     if hasattr(objects, 'ndarray_handler'):
         def test_ndarray(self):
