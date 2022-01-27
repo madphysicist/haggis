@@ -29,17 +29,219 @@ This includes things like spoofing module contents, copying classes and
 functions, and automatically creating properties.
 """
 
+from array import array
+from collections.abc import Iterable, Mapping
 from copy import copy
 from functools import update_wrapper, WRAPPER_ASSIGNMENTS
+from itertools import chain
 from os.path import basename, dirname
 import sys
 from types import FunctionType, ModuleType
 
 
 __all__ = [
-    'HiddenPropMeta', 'package_root', 'update_module',
-    'copy_func', 'copy_class'
+    'HiddenPropMeta', 'copy_func', 'copy_class', 'getsizeof',
+    'package_root', 'size_type_mapping', 'update_module',
 ]
+
+
+#: List mapping of types to the special processing routines required to
+#: support them with :py:func:`getsizeof`.
+#:
+#: Types are checked from the end of the list. The first element is
+#: :py:class:`~collections.abc.Iterable`, which is the universal
+#: catchall. Later elements are more specific types. Custom types
+#: should be appended to the end.
+#:
+#: The following types are supported out of the box:
+#:
+#: - :py:class:`~collections.abc.Iterable`
+#: - :py:class:`~collections.abc.Mapping`
+#: - :py:class:`str`, :py:class:`bytes`, :py:class:`bytearray`,
+#:   :py:class:`array.array`
+#: - :py:class:`numpy.ndarray`
+#:
+#: The list contains two-element tuples, as would be used to initialize
+#: a :py:class:`dict`. The first element can be a scalar type or tuple
+#: of types. The second element may be `None`, indicaing a passthrough
+#: to :py:func:`sys.getsizeof`, or a callable accepting an object of
+#: the correct type, returning an iterable of elements in any order.
+#: The callable only needs to iterate the top-level elements.
+#:
+#: Permanently register handlers by appending the appropriate tuple to
+#: this list. Temporarily register them by using the `handlers`
+#: argument to :py:func:`getsizeof`.
+size_type_mapping = [
+    (Iterable, iter),
+    (Mapping, lambda m: (e for i in m.items() for e in i)),
+    ((str, bytes, bytearray, array), None),
+]
+
+
+try:
+    import numpy
+except ImportError:
+    pass
+else:
+    def ndarray_handler(x):
+        """
+        Yield all the elements of the array that are objects.
+
+        Structured dtypes are parsed field-by-fiels, with proper
+        handling of nested structures.
+
+        Parameter
+        ---------
+        x : numpy.ndarray
+            The array to parse.
+
+        Return
+        ------
+        elem :
+            A generator of all the elements of `x` that have dtype code
+            ``'O'``.
+        """
+        def dfs(x):
+            """
+            DFS chosen because nested datatypes are expected to be of
+            limited deoth, and because it's most likely to return the
+            fields and subarrays in order of increasing offset.
+
+            Parameter
+            ---------
+            x : numpy.ndarray
+                An array potentially containing objects.
+
+            Return
+            ------
+            elem :
+                An generator chaining the elements of the array that
+                are objects together.
+            """
+            dtype = x.dtype
+            if not dtype.hasobject:
+                return
+
+            # Structure
+            if dtype.fields is not None:
+                for name in dtype.fields:
+                    yield from dfs(x[name])
+            # Array
+            elif dtype.subdtype is not None:
+                for i in numpy.arange(numpy.prod(dtype.shape)):
+                    yield from dfs(x[i])
+            # Primitive
+            else:
+                yield from map(numpy.ndarray.item, numpy.nditer(x, flags=['refs_ok']))
+
+        yield from dfs(x)
+
+    size_type_mapping.append((numpy.ndarray, ndarray_handler))
+
+
+def getsizeof(obj, handlers=None, default=sys.getsizeof(int)):
+    """
+    Recursive version of :py:func:`sys.getsizeof` for handling
+    iterables and mappings.
+
+    Supports automatic circular reference detection, and does not
+    double-count repeated references. String and array types get
+    special treatement: they are iterable, but not processed
+    recursively because their size already includes the buffer. The
+    following types are treated as array types:
+
+    - :py:class:`str`
+    - :py:class:`bytes`
+    - :py:class:`bytearray`
+    - :py:class:`array.array`
+    - :py:class:`numpy.ndarray`
+
+    Additional array/string-like types may be added by appending them
+    to the module-level tuple :py:attr:`size_type_mapping`. Numpy
+    arrays require special treatment because they can contain
+    references to other objects nested at arbitrarily deep levels of
+    the datatype.
+
+    References are not fully supported yet, but a custom handler can
+    be added to :py:attr:`size_type_mapping`. Object attributes have
+    only rudimentary support via recursion into ``__dict__`` and
+    ``__slots__`` (not necessarily mutually exclusive). Additional
+    support is available via custom implementations of
+    :py:meth:`~object.__sizeof__`, or through custom handlers.
+
+    Parameters
+    ----------
+    obj :
+        The object whose size is to be computed.
+    handlers : None, Iterable[tuple[type, callable]], Mapping
+        Mapping of types to handler functions, or list of tuples
+        containing type-handler pairs. Items are iterated in reverse
+        order, so place more specific types last. Callables must
+        accept the object whose elements are to be sized, and return
+        an iterable of the top-level elements. Any handlers speciied
+        through this argument supersede defaults set in
+        :py:attr:`size_type_mapping`.
+    default : int
+        The default size to use for objects that do not support a
+        :py:meth:`~object.__sizeof__` operation. Default:
+        ``sys.getsizeof(int)``.
+
+    Return
+    ------
+    size : int
+        The size of the object and all the references it contains.
+        This is especially useful for container types.
+
+    Notes
+    -----
+    This recipe is inspired by Raymond Hettinger's "Compute Memory
+    footprint of an object and its contents" available at
+    https://github.com/ActiveState/recipe-577504-compute-mem-footprint
+    and https://code.activestate.com/recipes/577504/. This function was
+    originally written at https://stackoverflow.com/a/70793151/2988730.
+    Things I took from Raymond's recipe after the fact:
+
+    - Making handlers iterate through the elements instead of applying
+      the original recursion function directly.
+    - Using a default value.
+    - Accepting a mapping of extra handlers.
+
+    Things I added:
+
+    - Proper handling of strings, bytes and bytearrays
+    - Numpy array handler
+    - Global type registry
+    - Support for `__dict__` and `__slots__`
+    """
+    if handlers is None:
+        handlers = ()
+    elif isinstance(handlers, Mapping):
+        handlers = handlers.items()
+
+    seen = set()
+    def recurse(obj):
+        x = id(obj)
+        if x in seen:
+            return 0
+        seen.add(x)
+        size = sys.getsizeof(obj, default)
+
+        for type, method in chain(reversed(handlers),
+                                  reversed(size_type_mapping)):
+            if isinstance(obj, type):
+                if method is not None:
+                    for elem in method(obj):
+                        size += recurse(elem)
+                break
+
+        if hasattr(obj, '__dict__'):
+            size += recurse(vars(obj))
+        for slot in getattr(obj, '__slots__', ()):
+            if hasattr(obj, slot):
+                size += recurse(getattr(obj, slot))
+        return size
+
+    return recurse(obj)
 
 
 def package_root(module):

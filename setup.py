@@ -143,11 +143,13 @@ if __name__ == '__main__':
         url='https://github.com/madphysicist/haggis',
         project_urls={
             'Bugs': 'https://github.com/madphysicist/haggis/issues',
-            'Documentation': 'https://haggis.readthedocs.io/en/latest/',
+            'Documentation': 'https://haggis.readthedocs.io/en/stable/',
         },
         packages=[
             'haggis',
             'haggis.files',
+            'haggis.tests',
+            'haggis.files.tests',
         ],
         package_dir={'': 'src'},
         package_data={'haggis.files': ['_resources/*.XSL']},
@@ -172,6 +174,6 @@ if __name__ == '__main__':
         },
         provides=['haggis'],
         tests_require=['pytest'],
-        data_files = [('', ['LICENSE', 'README.md'])],
+        data_files = [('', ['LICENSE', 'README.md', 'CHANGELOG'])],
         cmdclass=COMMANDS,
     )
