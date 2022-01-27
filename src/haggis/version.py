@@ -23,6 +23,7 @@
 # Version: 10 Jan 2022: Bumped to 0.1
 # Version: 16 Jan 2022: Bumped to 0.1.1
 # Version: 16 Jan 2022: Bumped to 0.2.0rc1: Documented versioning a bit better
+# Version: 27 Jan 2022: Bumped to 0.2.0
 
 
 """
@@ -45,4 +46,4 @@ back in.
 
 
 #: The current version
-__version__ = '0.2.0rc1'
+__version__ = '0.2.0'
