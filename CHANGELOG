@@ -14,7 +14,7 @@ Changelog
   - isolate_dtype in npy_util
   - as_base, digit_count in numbers
 * Added docs to sdist
-* Moved map_array from math to npy_util
+* Moved map_array, mask2runs, runs2mask from math to npy_util
 
 
 0.1.1 (2022-01-16)
