@@ -13,6 +13,10 @@ Changelog
   - ndarray_handler added to size_type_mapping in objects
   - isolate_dtype in npy_util
   - as_base, digit_count in numbers
+* New unit tests:
+  - tests.test_objects.TestGetsizeof
+  - tests.test_numbers.TestAsBase
+  - tests.test_numbers.TestDigitCount
 * Added docs to sdist
 * Moved map_array, mask2runs, runs2mask from math to npy_util
 
@@ -28,7 +32,7 @@ Minor updates to first release.
   - math.read_divide correctly handles scalar inputs
 * Created pytest configuration, added first set of unit tests
   - files.tests.test_csv
-  - tests.math.segment_distance
+  - tests.test_math.TestSegmentDistance
 * Improved documentation with autosummary
 * Added this CHANGELOG to installed data
 
