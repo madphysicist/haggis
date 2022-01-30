@@ -19,6 +19,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 29 Jan 2022: Moved load_module to public level
 
 
 """
@@ -26,7 +27,7 @@ Custom module loading functionality for Python code, wrapped around
 portions of :py:mod:`importlib`.
 """
 
-__all__ = ['load_object', 'module_as_dict']
+__all__ = ['load_object', 'load_module', 'module_as_dict']
 
 
 from collections import deque
@@ -35,6 +36,7 @@ from importlib.util import spec_from_loader, module_from_spec
 from importlib.machinery import SourceFileLoader
 from inspect import ismodule, isclass, isfunction
 from os.path import basename, splitext
+import sys
 
 
 def load_object(name):
@@ -51,6 +53,53 @@ def load_object(name):
     path = '.'.join(path[:-1])
     module = import_module(path)
     return getattr(module, name)
+
+
+def load_module(module, name=None, sys_module=False,
+                injection_var=None, injection=None):
+    """
+    Load a module from a text file containing Python code.
+
+    Parameters
+    ----------
+    module : str or pathlib.Path
+        The path of the file to load.
+    name : str or None
+        The name under which the module is imported (its `__name__`
+        attribute). If not supplied, or a falsy value, the name is
+        computed from the file name, minus the extension. Setting this
+        parameter to ``'__main__'`` will trigger import guards.
+    sys_module : bool
+        If truthy, add the module to :py:obj:`sys.modules` under the
+        correct name. Set this to `True` if importing files that
+        contain relative imports. The default is `False`.
+    injection :
+        Any object that the user wishes to inject into the loading
+        process. The object is visible to the code of the module
+        under the name given by `injection_var`.
+    injection_var : str or None
+        The name of an attribute to inject into the loading process.
+        The `injection` object is bound to this name the in the module
+        namespace. The value of `injection` is never inspected. It is
+        injected or omitted based solely on the contents of this
+        parameter. A falsy value (the default) skips injection.
+    """
+    # Import module: taken from https://stackoverflow.com/a/67692/2988730
+    mod_name = name if name else splitext(basename(module))[0]
+    # str(module) necessary because import machinery does't accept Paths
+    mod_spec = spec_from_loader(
+        mod_name, loader=SourceFileLoader(mod_name, str(module))
+    )
+    mod = module_from_spec(mod_spec)
+    if injection_var:
+        # Keyword injection based on
+        # https://stackoverflow.com/a/38650878/2988730
+        mod.__dict__[injection_var] = injection
+    if sys_module:
+        # https://stackoverflow.com/a/50395128/2988730
+        sys.modules[mod_spec.name] = mod
+    mod_spec.loader.exec_module(mod)
+    return mod
 
 
 def module_as_dict(module, name=None, *, injection=None, injection_var=None,
@@ -132,24 +181,6 @@ def module_as_dict(module, name=None, *, injection=None, injection_var=None,
         loaded namespace when converting to a dictionary. Defaults to
         :py:obj:`False`.
     """
-    def load_module(module, name, injection_var=None, injection=None):
-        """
-        Load a module from a text file containing Python code.
-        """
-        # Import module: taken from http://stackoverflow.com/a/67692/2988730
-        mod_name = name if name else splitext(basename(module))[0]
-        # str(module) necessary because import machinery does't accept Paths
-        mod_spec = spec_from_loader(
-            mod_name, loader=SourceFileLoader(mod_name, str(module))
-        )
-        mod = module_from_spec(mod_spec)
-        if injection_var:
-            # Keyword injection based on
-            # http://stackoverflow.com/a/38650878/2988730
-            mod.__dict__[injection_var] = injection
-        mod_spec.loader.exec_module(mod)
-        return mod
-
     def parse_module(mod, output, submodules):
         """
         Append the contents of the module's dictionary to an existing
@@ -175,8 +206,8 @@ def module_as_dict(module, name=None, *, injection=None, injection_var=None,
         mod = vars(mod)
         # Get the includes (so `skip_dunders` doesn't filter `include_var`)
         if include_var:
-            inject = (injection_var, injection) if recurse_injection else ()
-            submodules.extend(load_module(name, None, *inject)
+            inject = injection_spec if recurse_injection else {}
+            submodules.extend(load_module(name, None, **inject)
                               for name in mod.get(include_var, []))
 
         # Create a filter method
@@ -196,8 +227,9 @@ def module_as_dict(module, name=None, *, injection=None, injection_var=None,
     # Convert the module to a dictionary
     dictionary = {}
     submodules = deque()
+    injection_spec = {'injection_var': injection_var, 'injection': injection}
     # Load the root module
-    submodules.append(load_module(module, name, injection_var, injection))
+    submodules.append(load_module(module, name, **injection_spec))
 
     # Keep adding elements to the dictionary as long as there are includes
     while submodules:

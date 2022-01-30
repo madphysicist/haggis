@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.3.0 (?)
+---------
+
+* New functions and classes:
+  - load.load_module no longer nested in load.module_as_dict
+* New unit tests:
+  - tests.test_load.TestLoadModule
+  - tests.test_load.TestModuleAsDict
+
+
 0.2.0 (2022-01-27)
 ------------------
 
