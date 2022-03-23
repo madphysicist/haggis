@@ -20,6 +20,7 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
 # Version: 10 Sep 2021: Added split_extension and `n` to insert_suffix
+# Version: 23 Mar 2022: Fixed iterability bug in PreOpenedFile
 
 
 """
@@ -241,8 +242,8 @@ class PreOpenedFile:
 
     Note that this is not a general-purpose proxy that can be used for
     most objects because it does not define any special methods besides
-    :py:meth:`__repr__`, :py:meth:`__enter__`, :py:meth:`__exit__` and
-    :py:meth:`close` as class attributes.
+    :py:meth:`__repr__`, :py:meth:`__enter__`, :py:meth:`__exit__`,
+    :py:meth:`__iter__` and :py:meth:`close` as class attributes.
     """
     def __init__(self, file):
         self.__file = file
@@ -267,6 +268,10 @@ class PreOpenedFile:
     def __exit__(self, *args, **kwargs):
         """ Do nothing. """
         pass
+
+    def __iter__(self, *args, **kwargs):
+        """ Return an iterator over the underlying file. """
+        return iter(self.__file)
 
     def close(self):
         """ Do nothing. """
