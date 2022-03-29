@@ -43,6 +43,7 @@ Modules and Packages
    haggis.files.fits
    haggis.files.pdf
    haggis.files.ps
+   haggis.files.ui
    haggis.files.xlsx
    haggis.files.xml
    haggis.files.zip
@@ -52,6 +53,7 @@ Modules and Packages
    haggis.mapping
    haggis.math
    haggis.mpl_util
+   haggis.npy_util
    haggis.numbers
    haggis.objects
    haggis.os
@@ -108,7 +110,7 @@ Modules and Packages
 
 .. automodule:: haggis.files
    :members:
-   :special-members: __enter__, __exit__, __repr__, __getitem__
+   :special-members: __enter__, __exit__, __repr__, __getitem__, __iter__
 
 
 --------------------
@@ -148,6 +150,14 @@ Modules and Packages
 -------------------
 
 .. automodule:: haggis.files.ps
+   :members:
+
+
+-------------------
+``files.ui`` module
+-------------------
+
+.. automodule:: haggis.files.ui
    :members:
 
 
@@ -221,6 +231,14 @@ Modules and Packages
 -------------------
 
 .. automodule:: haggis.mpl_util
+   :members:
+
+
+-------------------
+``npy_util`` module
+-------------------
+
+.. automodule:: haggis.npy_util
    :members:
 
 
