@@ -161,9 +161,10 @@ can also do ::
 
     make -C doc html
 
-The documentation is not present in the `PyPI`_ source distributions, only
-directly from `GitHub`_. Any optional Python dependencies that are missing will
-affect the documentation. Module attributes that are disabled on the local
+The documentation can be found directly on `GitHub`_, or in the source
+distribution on `PyPI`_. It is not avialable in binary distributions.
+Any optional Python dependencies that are missing will affect how the
+documentation is built. Module attributes that are disabled on the local
 system will not be documented.
 
 
