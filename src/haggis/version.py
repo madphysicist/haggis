@@ -26,6 +26,7 @@
 # Version: 27 Jan 2022: Bumped to 0.2.0
 # Version: 29 Jan 2022: Decided to open backport 0.2.1 branch after all.
 # Version: 27 Jan 2022: Bumped to 0.3.0rc1
+# Version: 29 Mar 2022: Bumped to 0.3.0
 
 
 """
@@ -48,4 +49,4 @@ back in.
 
 
 #: The current version
-__version__ = '0.3.0rc1'
+__version__ = '0.3.0'

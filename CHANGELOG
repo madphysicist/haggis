@@ -1,11 +1,14 @@
 Changelog
 =========
 
-0.3.0 (?)
----------
+0.3.0 (2022-03-29)
+------------------
 
 * New functions and classes:
   - load.load_module no longer nested in load.module_as_dict
+  - npy_util.iterate_dtype
+* Bugfixes:
+  - files.PreOpenedFile object is now properly iterable
 * New unit tests:
   - tests.test_load.TestLoadModule
   - tests.test_load.TestModuleAsDict
