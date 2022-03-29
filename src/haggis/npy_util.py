@@ -20,6 +20,7 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 22 Jan 2022: Initial Coding
 # Version: 27 Jan 2022: Moved mask2runs, runs2mask from math
+# Version: 28 Mar 2022: Added iterate_dtype
 
 
 """
@@ -28,6 +29,7 @@ Utilities for manipulating non-computational aspects of numpy arrays.
 Mathematical computations belong in :py:mod:`haggis.math`.
 """
 
+from itertools import product
 from math import ceil, log
 
 import numpy
@@ -36,7 +38,9 @@ from . import Sentinel
 from .numbers import digit_count
 
 
-__all__ = ['isolate_dtype', 'map_array', 'mask2runs', 'runs2mask']
+__all__ = [
+    'isolate_dtype', 'iterate_dtype', 'map_array', 'mask2runs', 'runs2mask'
+]
 
 
 def isolate_dtype(dtype, char='O'):
@@ -105,6 +109,75 @@ def isolate_dtype(dtype, char='O'):
     d = {'names': names, 'offsets': offsets,
          'formats': n * [char], 'itemsize': dtype.itemsize}
     return numpy.dtype(d)
+
+
+def iterate_dtype(arr, iterate_elements=False):
+    """
+    Generate each primitive sub-array of a complex datatype.
+
+    The generator yields the array for each builtin dtype. The leading
+    dimensions of each yielded array are `arr.shape` the trailing
+    dimensions are determined by `iterate_elements` and the shapes
+    present in each sub-dtype. Currently, only depth-first traversal is
+    supported.
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        Must have a `dtype` attribute.
+    iterate_elements : bool
+        If `True`, array elements of each dtype will be yielded
+        separately. See `Examples` for more information.
+
+    Examples
+    --------
+    Create a complex dtype and an array of zeros::
+
+        >>> dt0 = np.dtype([('a', np.float32), ('b', np.int32, 2)])
+        >>> dt = np.dtype([('x', np.bool_), ('y', dt0, 3)])
+        >>> arr = np.zeros((3, 3), dt)
+
+    When iterating without elements, the genrator does not descend into
+    each sub-dtype consisting of primitives::
+
+        >>> for v in iterate_dtype(arr):
+        ...     print(v.dtype, v.shape)
+        bool_ (3, 3)
+        float32 (3, 3, 3)
+        int32 (3, 3, 3, 2)
+
+    When `iterate_elements` is set, the generator descends into the
+    elements of each sub-dtype, even if they are primitive::
+
+        >>> for v in iterate_dtype(arr, iterate_elements=True):
+        ...     print(v.dtype, v.shape)
+        bool_ (3, 3)
+        float32 (3, 3)
+        int32 (3, 3)
+        int32 (3, 3)
+        float32 (3, 3)
+        int32 (3, 3)
+        int32 (3, 3)
+        float32 (3, 3)
+        int32 (3, 3)
+        int32 (3, 3)
+    """
+    dt = arr.dtype
+    if dt.fields is None:
+        yield arr
+    elif iterate_elements:
+        # look at the dtype in detail
+        for fname, (ftype, _) in dt.fields.items():
+            if ftype.subdtype is not None:
+                for index in product(*(range(n) for n in ftype.shape)):
+                    yield from iterate_dtype(arr[fname][(Ellipsis,) + index],
+                                             iterate_elements=True)
+            else:
+                yield from iterate_dtype(arr[fname], iterate_elements=True)
+    else:
+        # let it happen transparently
+        for field in dt.fields:
+            yield from iterate_dtype(arr[field], iterate_elements=False)
 
 
 def map_array(map, arr, value=None, default=Sentinel):
