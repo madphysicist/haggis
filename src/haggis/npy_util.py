@@ -111,7 +111,7 @@ def isolate_dtype(dtype, char='O'):
     return numpy.dtype(d)
 
 
-def iterate_dtype(arr, iterate_elements=False):
+def iterate_dtype(arr, iterate_elements=False, yield_key=False):
     """
     Generate each primitive sub-array of a complex datatype.
 
@@ -121,6 +121,12 @@ def iterate_dtype(arr, iterate_elements=False):
     present in each sub-dtype. Currently, only depth-first traversal is
     supported.
 
+    An optional field key can be yielded as well, if `yield_key` is
+    set. The key is a dot-separated string enumerating the visited
+    fields. If `iterate_elements` is specified, it will contain
+    bracketed indices as well. See the `Examples` section for more
+    information, including a sample of the key format.
+
     Parameters
     ----------
     arr : numpy.ndarray
@@ -128,6 +134,9 @@ def iterate_dtype(arr, iterate_elements=False):
     iterate_elements : bool
         If `True`, array elements of each dtype will be yielded
         separately. See `Examples` for more information.
+    yield_key : bool
+        Whether or not to generate a second output contatining the
+        field key.
 
     Examples
     --------
@@ -140,44 +149,62 @@ def iterate_dtype(arr, iterate_elements=False):
     When iterating without elements, the genrator does not descend into
     each sub-dtype consisting of primitives::
 
-        >>> for v in iterate_dtype(arr):
-        ...     print(v.dtype, v.shape)
-        bool_ (3, 3)
-        float32 (3, 3, 3)
-        int32 (3, 3, 3, 2)
+        >>> for a, k in iterate_dtype(arr, yield_key=True):
+        ...     print(k, a.dtype, a.shape)
+        x bool (3, 3)
+        y.a float32 (3, 3, 3)
+        y.b int32 (3, 3, 3, 2)
 
     When `iterate_elements` is set, the generator descends into the
     elements of each sub-dtype, even if they are primitive::
 
-        >>> for v in iterate_dtype(arr, iterate_elements=True):
-        ...     print(v.dtype, v.shape)
-        bool_ (3, 3)
-        float32 (3, 3)
-        int32 (3, 3)
-        int32 (3, 3)
-        float32 (3, 3)
-        int32 (3, 3)
-        int32 (3, 3)
-        float32 (3, 3)
-        int32 (3, 3)
-        int32 (3, 3)
+        >>> for a, k in iterate_dtype(arr, iterate_elements=True, yield_key=True):
+        ...     print(k, a.dtype, a.shape)
+        x bool (3, 3)
+        y[0].a float32 (3, 3)
+        y[0].b[0] int32 (3, 3)
+        y[0].b[1]int32 (3, 3)
+        y[1].a float32 (3, 3)
+        y[1].b[0] int32 (3, 3)
+        y[1].b[1] int32 (3, 3)
+        y[2].a float32 (3, 3)
+        y[2].b[0] int32 (3, 3)
+        y[2].b[1] int32 (3, 3)
     """
-    dt = arr.dtype
-    if dt.fields is None:
-        yield arr
-    elif iterate_elements:
-        # look at the dtype in detail
-        for fname, (ftype, _) in dt.fields.items():
-            if ftype.subdtype is not None:
-                for index in product(*(range(n) for n in ftype.shape)):
-                    yield from iterate_dtype(arr[fname][(Ellipsis,) + index],
-                                             iterate_elements=True)
+    def add(key, leaf, index=None):
+        key = '{}.{}'.format(key, leaf) if key else leaf
+        if index is not None:
+            key = '{}[{}]'.format(key, ', '.join(map(str, index)))
+        return key
+
+    def pack(arr, key):
+        if yield_key:
+            return arr, key
+        return arr
+
+    if iterate_elements:
+        def inner(arr, key):
+            dt = arr.dtype
+            if dt.fields is None:
+                yield pack(arr, key)
             else:
-                yield from iterate_dtype(arr[fname], iterate_elements=True)
+                for fname, (ftype, _) in dt.fields.items():
+                    if ftype.subdtype is not None:
+                        for index in product(*(range(n) for n in ftype.shape)):
+                            yield from inner(arr[fname][(Ellipsis,) + index],
+                                             add(key, fname, index))
+                    else:
+                        yield from inner(arr[fname], add(key, fname))
     else:
-        # let it happen transparently
-        for field in dt.fields:
-            yield from iterate_dtype(arr[field], iterate_elements=False)
+        def inner(arr, key):
+            dt = arr.dtype
+            if dt.fields is None:
+                yield pack(arr, key)
+            else:
+                for field in dt.fields:
+                    yield from inner(arr[field], add(key, field))
+
+    yield from inner(arr, '')
 
 
 def map_array(map, arr, value=None, default=Sentinel):
