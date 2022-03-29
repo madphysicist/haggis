@@ -21,6 +21,7 @@
 # Version: 13 Apr 2019: Initial Coding
 # Version: 09 Jan 2021: Added to_hex, camel2snake, snake2camel, timestamp
 # Version: 11 Feb 2021: Moved timestamp to module time
+# Version: 30 Mar 2022: Bugfix in [split_]align and [split_]horiz_cat to enforce strings
 
 
 """
@@ -119,10 +120,10 @@ def format_list(iterable, width=8, format=None, sep=', ', indent=None):
 
 def _maxlen(lines, len_key=len):
     """
-    Return the maximum length in an iterable of lines based on the 
-    specified length function.
+    Return the maximum length in an iterable based on the specified
+    length function.
     """
-    return len_key(max(lines, key=len_key)) if lines else 0
+    return max(len_key(line) for line in lines) if lines else 0
 
 
 #: Mapping of acceptable alignments inputs to :py:func:`align`,
@@ -244,6 +245,7 @@ def split_align(strings, alignment, width=None, overflow='extend',
 
     The result is a list of lines rather than a single string.
     """
+    strings = [str(s) for s in strings]
     if width is None:
         width = _maxlen(strings, len_key)
     overflow_fn = option_lookup(
