@@ -39,7 +39,8 @@ from .numbers import digit_count
 
 
 __all__ = [
-    'isolate_dtype', 'iterate_dtype', 'map_array', 'mask2runs', 'runs2mask'
+    'isolate_dtype', 'iterate_dtype', 'map_array', 'mask2runs',
+    'replace_field', 'runs2mask'
 ]
 
 
@@ -205,6 +206,115 @@ def iterate_dtype(arr, iterate_elements=False, yield_key=False):
                     yield from inner(arr[field], add(key, field))
 
     yield from inner(arr, '')
+
+
+def replace_field(in_type, out_type, *fields, name=None):
+    """
+    Create a dtype that will allow viewing a subset of the fields of
+    `in_type` with a different structure.
+
+    This function preserves the names, types, and offsets of all the
+    unmodified fields. The replacement type will cover the entirety of
+    the named `fields`, regardless of whether the underlying fields are
+    contiguous or not.
+
+    If the size of the replaced block is a multiple of
+    `out_type.itemsize` other than one, the output type will be an array.
+    The multiple must be an integer.
+
+    Parameters
+    ----------
+    in_type : numpy.dtype
+        Datatype to transform.
+    out_type : numpy.dtype
+        Primitive types may be provided as the equivalent string or
+        class object.
+    *fields : str
+        Names of the fields to transfrom. An empty `fields` means that
+        all of them are to be replaced. A new field is generated as a
+        contiguous block whose size must be a multiple of
+        `out_type.itemsize`. All elements must be valid field names in
+        `in_type`.
+    name : str, optional
+        The name of the replacement field. By default, this is just the
+        concatenation of `fields`.
+
+    Returns
+    -------
+    dtype :  numpy.dtype
+        Dtype with the named `fields` replaced by a scalar or array of
+        `out_type`. All other fields remain the same.
+
+    Examples
+    --------
+    A simple case:
+
+        >>> inner = np.dtype([('Roll', np.float32),
+        ...                   ('Pitch', np.float32),
+        ...                   ('Yaw', np.float32)])
+        >>> outer = np.dtype([('Position', np.float32, 3),
+        ...                   ('Attitude', inner)])
+        >>> replace_field(outer, np.float32, 'Attitude')
+        dtype([('Position', '<f4', (3,)), ('Attitude', '<f4', (3,))])
+
+    To modify nested custom types, call this function recursively::
+
+        >>> replace_field(outer, replace_field(inner, np.float32), 'Attitude')
+        dtype([('Position', '<f4', (3,)), ('Attitude', [('RollPitchYaw', '<f4', (3,))])])
+    """
+    if in_type.fields is None:
+        raise ValueError(f'in_type must be structured dtype, found {in_type}')
+    if any(f not in in_type.fields for f in fields):
+        raise ValueError('in_type is missing some field(s): '
+                         f'{", ".join(set(fields) - set(in_type.fields))}')
+    out_type = numpy.dtype(out_type)
+
+    if not fields:
+        fields = in_type.fields.keys()
+    fields = set(fields)
+
+    # Join the replaced fields
+    if not name:
+        aname = []
+    # Maintain the offsets
+    keys = {'names': [], 'formats': [], 'offsets': [],
+            'itemsize': in_type.itemsize}
+    # Keep track of the index of the replacement in `keys`
+    idx = None
+    # Keep track of the min and max offsets covered
+    start = stop = None
+
+    # Generate the new dtype
+    for field, (type, offset) in in_type.fields.items():
+        if field in fields:
+            if not name:
+                # Concatenate the field names in CamelCase or snake_case
+                if (aname and
+                    ((aname[-1][-1].isalpha() ^ field[0].isalpha()) or
+                     not (aname[-1][-1].isupper() ^ field[0].isupper()))):
+                    aname.append('_')
+                aname.append(field)
+            if idx is None:
+                idx = len(keys)
+                start = offset
+                stop = offset + type.itemsize
+            else:
+                start = min(start, offset)
+                stop = max(stop, offset + type.itemsize)
+        else:
+            keys['names'].append(field)
+            keys['formats'].append(type)
+            keys['offsets'].append(offset)
+
+    n = (stop - start) // out_type.itemsize
+    if out_type.itemsize * n != stop - start:
+        raise ValueError(f'Specified block covers {stop - start} bytes, '
+                         f'but replacement size is {out_type.itemsize}')
+
+    keys['names'].insert(idx, name or ''.join(aname))
+    keys['formats'].insert(idx, out_type if n == 1 else (out_type, n))
+    keys['offsets'].insert(idx, start)
+    return numpy.dtype(keys)
 
 
 def map_array(map, arr, value=None, default=Sentinel):
