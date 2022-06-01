@@ -31,7 +31,6 @@ Mathematical computations belong in :py:mod:`haggis.math`.
 """
 
 from itertools import product
-from math import ceil, log
 
 import numpy
 
@@ -238,7 +237,8 @@ def replace_field(in_type, out_type, *fields, name=None):
         `in_type`.
     name : str, optional
         The name of the replacement field. By default, this is just the
-        concatenation of `fields`.
+        concatenation of `fields`, respecting CamelCase and snake_case
+        conventions in transitions.
 
     Returns
     -------
@@ -272,14 +272,21 @@ def replace_field(in_type, out_type, *fields, name=None):
 
     if not fields:
         fields = in_type.fields.keys()
+    if not name:
+        names = []
+        for field in fields:
+            if (names and
+                ((names[-1][-1].isalpha() ^ field[0].isalpha()) or
+                 not (names[-1][-1].isupper() ^ field[0].isupper()))):
+                names.append('_')
+            names.append(field)
+        name = ''.join(names)
     fields = set(fields)
 
-    # Join the replaced fields
-    if not name:
-        aname = []
-    # Maintain the offsets
-    keys = {'names': [], 'formats': [], 'offsets': [],
-            'itemsize': in_type.itemsize}
+    # Keep track of the elements to retain
+    names = []
+    formats = []
+    offsets = []
     # Keep track of the index of the replacement in `keys`
     idx = None
     # Keep track of the min and max offsets covered
@@ -288,34 +295,30 @@ def replace_field(in_type, out_type, *fields, name=None):
     # Generate the new dtype
     for field, (type, offset) in in_type.fields.items():
         if field in fields:
-            if not name:
-                # Concatenate the field names in CamelCase or snake_case
-                if (aname and
-                    ((aname[-1][-1].isalpha() ^ field[0].isalpha()) or
-                     not (aname[-1][-1].isupper() ^ field[0].isupper()))):
-                    aname.append('_')
-                aname.append(field)
             if idx is None:
-                idx = len(keys)
+                idx = len(names)
                 start = offset
                 stop = offset + type.itemsize
             else:
                 start = min(start, offset)
                 stop = max(stop, offset + type.itemsize)
         else:
-            keys['names'].append(field)
-            keys['formats'].append(type)
-            keys['offsets'].append(offset)
+            names.append(field)
+            formats.append(type)
+            offsets.append(offset)
 
     n = (stop - start) // out_type.itemsize
     if out_type.itemsize * n != stop - start:
         raise ValueError(f'Specified block covers {stop - start} bytes, '
                          f'but replacement size is {out_type.itemsize}')
 
-    keys['names'].insert(idx, name or ''.join(aname))
-    keys['formats'].insert(idx, out_type if n == 1 else (out_type, n))
-    keys['offsets'].insert(idx, start)
-    return numpy.dtype(keys)
+    names.insert(idx, name)
+    formats.insert(idx, out_type if n == 1 else (out_type, n))
+    offsets.insert(idx, start)
+    return numpy.dtype({
+        'names': names, 'formats': formats, 'offsets': offsets,
+        'itemsize': in_type.itemsize
+    })
 
 
 def map_array(map, arr, value=None, default=Sentinel):
