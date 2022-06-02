@@ -152,7 +152,8 @@ if __name__ == '__main__':
             'haggis.files.tests',
         ],
         package_dir={'': 'src'},
-        package_data={'haggis.files': ['_resources/*.XSL']},
+        package_data={'haggis.files': ['_resources/*.XSL'],
+                      'haggis.tests': ['data/*']},
         install_requires=['numpy >= 1.10'],
         extras_require={
             'all': [
