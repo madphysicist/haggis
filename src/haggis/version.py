@@ -29,6 +29,7 @@
 # Version: 29 Mar 2022: Bumped to 0.3.0
 # Version: 29 Mar 2022: Opened to 0.3.1 backport branch (rc1)
 # Version: 30 Mar 2022: Bumped to 0.3.1rc2 after pre-release
+# Version: 02 Jun 2022: Backport 0.3.1 closed
 
 
 """
@@ -51,4 +52,4 @@ back in.
 
 
 #: The current version
-__version__ = '0.3.1rc2'
+__version__ = '0.3.1'
