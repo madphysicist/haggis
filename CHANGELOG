@@ -1,6 +1,15 @@
 Changelog
 =========
 
+
+0.4.0 (?)
+---------
+* New functions and classes:
+  - npy_util.replace_field
+* New unit tests:
+  - tests.test_npy_util.TestReplaceField
+
+
 0.3.0 (2022-03-29)
 ------------------
 

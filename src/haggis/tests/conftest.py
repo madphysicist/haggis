@@ -44,7 +44,7 @@ def plots(request):
     command-line option is set through the :mod:`skg.tests.options`
     plugin.
     """
-    if request.config.getoption('--plots'):
+    if request.config.getoption('--plots', False):
         try:
             import matplotlib
             matplotlib.use('Agg')
