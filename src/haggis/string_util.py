@@ -22,6 +22,7 @@
 # Version: 09 Jan 2021: Added to_hex, camel2snake, snake2camel, timestamp
 # Version: 11 Feb 2021: Moved timestamp to module time
 # Version: 30 Mar 2022: Bugfix in [split_]align and [split_]horiz_cat to enforce strings
+# Version: 10 Jun 2022: Added multiline_repr
 
 
 """
@@ -42,6 +43,7 @@ __all__ = [
     'check_value',
     'to_casefold', 'to_lower', 'to_upper', 'to_hex',
     'camel2snake', 'snake2camel',
+    'multiline_repr',
 ]
 
 
@@ -853,3 +855,149 @@ def snake2camel(string, first_upper=False):
     if first_upper:
         chars[0] = chars[0].upper()
     return ''.join(chars)
+
+
+def multiline_repr(args=(), kws=()):
+    """
+    Decorator providing a "fancy" version of `__repr__` to classes.
+
+    The version of `__repr__` prints the type name, with an argument
+    list determined by `repr_args` and `repr_kws`. The argument lists
+    are stored in class properties named `_multiline_repr_args` and
+    `_multiline_repr_kws`. These aggregate across inheritance trees.
+
+    Setting either iterable explicitly to `None` instead of an empty
+    iterable will dynamically use `list(vars(self))`.
+
+    Parameters
+    ----------
+    repr_args : Iterable
+        An iterable of strings or 2-element tuples (may be mixed).
+        Tuples are of the form `(keyword, function)`. `function` must
+        have a signature like `getattr`. If `keyword` starts with an
+        asterisk (`*`), the function is expected to return an iterable
+        of individual arguments, otherwise it returns a single argument.
+    repr_kws : Iterable
+        An iterable of the same type as `repr_args`, except that
+        star-arguments are forbidden: each keyword may only refer to a
+        single object.
+
+    Return
+    ------
+    A decorator that will add a `__repr__` method and two properties
+    to a class. The result of `__repr__` will be the class name and a
+    pretty-printed argument list, displayed across multiple lines.
+
+    Examples
+    --------
+    Indentation works with nested multiline representations::
+
+    >>> @multiline_repr('p', 'q')
+    ... class Inner:
+    ...     def __init__(self, p, q=None):
+    ...         self.p = p
+    ...         self.q = q
+    >>> @multiline_repr(['a', 'b'], ['x', ('y', lambda obj, attr: obj.z)])
+    ... class Test:
+    ...     def __init__(self):
+    ...         self.a = 1
+    ...         self.b = 2
+    ...         self.x = Inner('a', 'b')
+    ...         self.z = 'omega'
+    ...
+    >>> print(Test())
+    Test(1,
+         2,
+         x=Inner('a',
+                 q='b'),
+         y='omega')
+
+    And with inheritance::
+
+    >>> @multiline_repr(['r', ('*s', lambda obj, attr: ('cat', 'dog'))], ['t'])
+    ... class Outer(Inner):
+    ...     def __init__(self):
+    ...         super().__init__('start')
+    ...         self.r = 'stop'
+    ...         self.t = 'none'
+    >>> print(Outer())
+    Outer('start',
+          'stop',
+          'cat',
+          'dog',
+          q=None,
+          t='none')
+    """
+    def get_attr(obj, attr):
+        if attr.startswith('*'):
+            yield from getattr(obj, attr[1:])
+        else:
+            yield getattr(obj, attr)
+
+    def tidy_up(arg_list, allow_star):
+        if arg_list is None:
+            return None
+        args = []
+        for descr in arg_list:
+            if isinstance(descr, str):
+                func = None
+            elif not isinstance(descr, tuple) or len(descr) != 2 \
+                                    or not isinstance(descr[0], str):
+                raise TypeError('Illegal argument descriptor: '
+                                'must be str or 2-element tuple')
+            else:
+                descr, func = descr
+            if allow_star:
+                if func is None:
+                    func = get_attr
+            else:
+                if descr.startswith('*'):
+                    raise ValueError('Only positoinal arguments may have a *')
+                if func is None:
+                    func = getattr
+            args.append((descr, func))
+        return tuple(args)
+
+    multiline_repr_args = tidy_up(args, True)
+    multiline_repr_kws = tidy_up(kws, False)
+
+    def s(k):
+        return ' ' * (len(k) + 1)
+
+    def __repr__(self):
+        t = type(self).__name__
+        sep1 = '\n' + s(t)
+        arg_strs = (sep1.join(repr(arg).splitlines())
+                        for name, func in self._multiline_repr_args
+                            for arg in func(self, name))
+        kw_strs = (f'{name}=' + (sep1 + s(name)).join(
+                                repr(func(self, name)).splitlines()
+                       ) for name, func in self._multiline_repr_kws)
+        sep2 = ',' + sep1
+        return (f'{t}({sep2.join((sep2.join(arg_strs), sep2.join(kw_strs)))})')
+
+    def decorator(cls):
+        @property
+        def _multiline_repr_args(self):
+            args = dict.fromkeys(vars(self), getattr).items() \
+                    if multiline_repr_args is None else multiline_repr_args
+            parent = super(cls, self)
+            prev = parent._multiline_repr_args \
+                    if hasattr(parent, '_multiline_repr_args') else ()
+            return prev + args
+
+        @property
+        def _multiline_repr_kws(self):
+            kws = dict.fromkeys(vars(self), getattr).items() \
+                    if multiline_repr_kws is None else multiline_repr_kws
+            parent = super(cls, self)
+            prev = parent._multiline_repr_kws \
+                    if hasattr(parent, '_multiline_repr_kws') else ()
+            return prev + kws
+
+        cls._multiline_repr_args = _multiline_repr_args
+        cls._multiline_repr_kws = _multiline_repr_kws
+        cls.__repr__ = __repr__
+        return cls
+
+    return decorator
