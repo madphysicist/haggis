@@ -6,6 +6,7 @@ Changelog
 ---------
 * New functions and classes:
   - multiline_repr in string_util
+  - RangeBuilder in recipes
 
 0.4.0 (2022-06-02)
 ------------------
