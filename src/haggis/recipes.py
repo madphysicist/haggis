@@ -476,7 +476,7 @@ class RangeBuilder:
     @property
     def start(self):
         """
-        .. py:attr:: start
+        .. py:attribute:: start
 
            The minimum lower bound of any of the ranges encountered so
            far. `None` if not initialized with at least one range.
@@ -487,7 +487,7 @@ class RangeBuilder:
     @property
     def stop(self):
         """
-        .. py:attr:: stop
+        .. py:attribute:: stop
 
            The maximum upper bound of any of the ranges encountered so
            far. `None` if not initialized with at least one range.
@@ -498,7 +498,7 @@ class RangeBuilder:
     @property
     def range(self):
         """
-        .. py:attr:: range
+        .. py:attribute:: range
 
            A list containing `[start, stop]` for a range encompassing
            all the ones encountered so far.  `None` if not initialized
@@ -518,7 +518,7 @@ class RangeBuilder:
         start :
             Any object supporting `min` comparison against the prior
             entries.
-        stop : TYPE
+        stop :
             Any object supporting `max` comparison against the prior
             entries.
         """

@@ -892,41 +892,41 @@ def multiline_repr(args=(), kws=()):
     --------
     Indentation works with nested multiline representations::
 
-    >>> @multiline_repr('p', 'q')
-    ... class Inner:
-    ...     def __init__(self, p, q=None):
-    ...         self.p = p
-    ...         self.q = q
-    >>> @multiline_repr(['a', 'b'], ['x', ('y', lambda obj, attr: obj.z)])
-    ... class Test:
-    ...     def __init__(self):
-    ...         self.a = 1
-    ...         self.b = 2
-    ...         self.x = Inner('a', 'b')
-    ...         self.z = 'omega'
-    ...
-    >>> print(Test())
-    Test(1,
-         2,
-         x=Inner('a',
-                 q='b'),
-         y='omega')
+        >>> @multiline_repr('p', 'q')
+        ... class Inner:
+        ...     def __init__(self, p, q=None):
+        ...         self.p = p
+        ...         self.q = q
+        >>> @multiline_repr(['a', 'b'], ['x', ('y', lambda obj, attr: obj.z)])
+        ... class Test:
+        ...     def __init__(self):
+        ...         self.a = 1
+        ...         self.b = 2
+        ...         self.x = Inner('a', 'b')
+        ...         self.z = 'omega'
+        ...
+        >>> print(Test())
+        Test(1,
+             2,
+             x=Inner('a',
+                     q='b'),
+             y='omega')
 
     And with inheritance::
 
-    >>> @multiline_repr(['r', ('*s', lambda obj, attr: ('cat', 'dog'))], ['t'])
-    ... class Outer(Inner):
-    ...     def __init__(self):
-    ...         super().__init__('start')
-    ...         self.r = 'stop'
-    ...         self.t = 'none'
-    >>> print(Outer())
-    Outer('start',
-          'stop',
-          'cat',
-          'dog',
-          q=None,
-          t='none')
+        >>> @multiline_repr(['r', ('*s', lambda obj, attr: ('cat', 'dog'))], ['t'])
+        ... class Outer(Inner):
+        ...     def __init__(self):
+        ...         super().__init__('start')
+        ...         self.r = 'stop'
+        ...         self.t = 'none'
+        >>> print(Outer())
+        Outer('start',
+              'stop',
+              'cat',
+              'dog',
+              q=None,
+              t='none')
     """
     def get_attr(obj, attr):
         if attr.startswith('*'):
