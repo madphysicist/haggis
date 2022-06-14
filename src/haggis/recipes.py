@@ -21,6 +21,7 @@
 # Version: 13 Apr 2019: Initial Coding
 # Version: 09 Jan 2021: Split off mapping related code, added CloseableMixin
 # Version: 11 Jun 2022: Added RangeBuilder
+# Version: 14 Jun 2022: Added RangeBuilder.__repr__
 
 
 """
@@ -472,6 +473,17 @@ class RangeBuilder:
         Construct a new, uninitialized range builder.
         """
         self.init = False
+
+    def __repr__(self):
+        """
+        Create a string representation of this object.
+
+        The result shows the range, and is not representative of an
+        actual constructor call.
+        """
+        args = f'{self._start}, {self._stop}' \
+                                        if self.init else '<uninitialized>'
+        return f'{type(self).__name__}({args})'
 
     @property
     def start(self):
