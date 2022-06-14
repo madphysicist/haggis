@@ -974,7 +974,7 @@ def multiline_repr(args=(), kws=()):
                                 repr(func(self, name)).splitlines()
                        ) for name, func in self._multiline_repr_kws)
         sep2 = ',' + sep1
-        return (f'{t}({sep2.join((sep2.join(arg_strs), sep2.join(kw_strs)))})')
+        return (f'{t}({sep2.join(chain(arg_strs, kw_strs))})')
 
     def decorator(cls):
         @property
@@ -993,7 +993,7 @@ def multiline_repr(args=(), kws=()):
             parent = super(cls, self)
             prev = parent._multiline_repr_kws \
                     if hasattr(parent, '_multiline_repr_kws') else ()
-            return prev + kws
+            return tuple(prev) + tuple(kws)
 
         cls._multiline_repr_args = _multiline_repr_args
         cls._multiline_repr_kws = _multiline_repr_kws
