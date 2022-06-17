@@ -20,6 +20,8 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
 # Version: 09 Jan 2021: Split off mapping related code, added CloseableMixin
+# Version: 11 Jun 2022: Added RangeBuilder
+# Version: 14 Jun 2022: Added RangeBuilder.__repr__
 
 
 """
@@ -33,7 +35,7 @@ documentation, and other sources like Stack Overflow.
 __all__ = [
     'all_combinations', 'all_nsc', 'any_nsc', 'CloseableMixin', 'consume',
     'grouper', 'immutable', 'islast', 'is_ordered_subset', 'KeyedSingleton',
-    'lenumerate', 'shift_left',
+    'lenumerate', 'RangeBuilder', 'shift_left',
 ]
 
 
@@ -455,3 +457,87 @@ def all_nsc(iterable):
     See https://stackoverflow.com/q/1790520/2988730 for source material.
     """
     return reduce(and_, (bool(x) for x in iterable), True)
+
+
+class RangeBuilder:
+    """
+    Utility for keeping tracks of the bounds of multiple ranges, e.g.,
+    for the limits of a plot.
+
+    A new builder is uninitialized at first: `start` and `stop` are
+    both `None`. To add a new range, call the `update` method. The
+    `start` and `stop` properties get the cumulative range.
+    """
+    def __init__(self):
+        """
+        Construct a new, uninitialized range builder.
+        """
+        self.init = False
+
+    def __repr__(self):
+        """
+        Create a string representation of this object.
+
+        The result shows the range, and is not representative of an
+        actual constructor call.
+        """
+        args = f'{self._start}, {self._stop}' \
+                                        if self.init else '<uninitialized>'
+        return f'{type(self).__name__}({args})'
+
+    @property
+    def start(self):
+        """
+        .. py:attribute:: start
+
+           The minimum lower bound of any of the ranges encountered so
+           far. `None` if not initialized with at least one range.
+        """
+        if self.init:
+            return self._start
+
+    @property
+    def stop(self):
+        """
+        .. py:attribute:: stop
+
+           The maximum upper bound of any of the ranges encountered so
+           far. `None` if not initialized with at least one range.
+        """
+        if self.init:
+            return self._stop
+
+    @property
+    def range(self):
+        """
+        .. py:attribute:: range
+
+           A list containing `[start, stop]` for a range encompassing
+           all the ones encountered so far.  `None` if not initialized
+           with at least one range.
+        """
+        if self.init:
+            return [self._start, self._stop]
+
+    def update(self, start, stop):
+        """
+        Add a range to the builder.
+
+        The first call to this method initializes the builder.
+
+        Parameters
+        ----------
+        start :
+            Any object supporting `min` comparison against the prior
+            entries.
+        stop :
+            Any object supporting `max` comparison against the prior
+            entries.
+        """
+        if self.init:
+            self._start = min(start, self._start)
+            self._stop = max(stop, self._stop)
+        else:
+            self._start = start
+            self._stop = stop
+            self.init = True
