@@ -20,6 +20,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 29 Jun 2022: Bugfix to list_number
 
 
 """
@@ -512,7 +513,6 @@ if docx_enabled:
             bulleted. The result is not guaranteed, but is fairly safe
             for most Word templates.
 
-
         The code here is mainly taken from python-docx
         `Issue #25 <https://github.com/python-openxml/python-docx/issues/25>`_
         and `Pull Request #110 <https://github.com/python-openxml/python-docx/pull/110>`_
@@ -575,20 +575,21 @@ if docx_enabled:
             # Compute the abstract ID first by style, then by num
             anum = get_abstract_id()
             # Set the concrete numbering based on the abstract numbering ID
-            num = numbering.add_num(anum)
+            numbr = numbering.add_num(anum)
             # Make sure to override the abstract continuation property
-            num.add_lvlOverride(ilvl=level).add_startOverride(1)
+            numbr.add_lvlOverride(ilvl=level).add_startOverride(1)
             # Extract the newly-allocated concrete numbering ID
-            num = num.numId
-            ret = num, anum
-
+            numbr = numbr.numId
+            ret = numbr, anum
         else:
             # Get the previous concrete numbering ID
             if level is None:
                 level = prev._p.pPr.numPr.ilvl.val
-            num = prev._p.pPr.numPr.numId.val
-            ret = num
-        par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_numId().val = num
+            numbr = prev._p.pPr.numPr.numId.val
+            ret = numbr
+
+        if num:
+            par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_numId().val = numbr
         par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_ilvl().val = level
         return ret
 
