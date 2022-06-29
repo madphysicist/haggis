@@ -5,9 +5,13 @@ Changelog
 0.6.0 (?)
 ---------
 
+* Bugfixes:
+  - Fixed handling of bulleted list styles in files.docx.list_number
+
 
 0.5.0 (2022-06-17)
 ------------------
+
 * New functions and classes:
   - multiline_repr in string_util
   - RangeBuilder in recipes
@@ -15,6 +19,7 @@ Changelog
 
 0.4.0 (2022-06-02)
 ------------------
+
 * New functions and classes:
   - npy_util.replace_field
 * New unit tests:
