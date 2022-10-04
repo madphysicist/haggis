@@ -22,6 +22,7 @@
 # Version: 09 Jan 2021: Split off mapping related code, added CloseableMixin
 # Version: 11 Jun 2022: Added RangeBuilder
 # Version: 14 Jun 2022: Added RangeBuilder.__repr__
+# Version: 04 Oct 2022: Made RangeBuilder.update stop parameter optional
 
 
 """
@@ -519,7 +520,7 @@ class RangeBuilder:
         if self.init:
             return [self._start, self._stop]
 
-    def update(self, start, stop):
+    def update(self, start, stop=None):
         """
         Add a range to the builder.
 
@@ -532,8 +533,10 @@ class RangeBuilder:
             entries.
         stop :
             Any object supporting `max` comparison against the prior
-            entries.
+            entries. Optional.
         """
+        if stop is None:
+            stop = start
         if self.init:
             self._start = min(start, self._start)
             self._stop = max(stop, self._stop)
