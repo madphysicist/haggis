@@ -2,14 +2,31 @@ Changelog
 =========
 
 
-0.5.0 (?)
+0.7.0 (?)
 ---------
+
+
+0.6.0 (2022-10-11)
+------------------
+
+* API changes:
+  - Parameter stop in recipes.RangeBuilder.update is now optional
+  - Property span in recipes.RangeBuilder
+* Bugfixes:
+  - Fixed handling of bulleted list styles in files.docx.list_number
+
+
+0.5.0 (2022-06-17)
+------------------
+
 * New functions and classes:
   - multiline_repr in string_util
   - RangeBuilder in recipes
 
+
 0.4.0 (2022-06-02)
 ------------------
+
 * New functions and classes:
   - npy_util.replace_field
 * New unit tests:
