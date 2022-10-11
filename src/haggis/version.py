@@ -34,6 +34,7 @@
 # Version: 17 Jun 2022: Bumped to 0.5.0
 # Version: 17 Jun 2022: Bumped to 0.6.0rc1
 # Version: 11 Oct 2022: Bumped to 0.6.0
+# Version: 11 Oct 2022: Bumped to 0.7.0rc1
 
 
 """
@@ -56,4 +57,4 @@ back in.
 
 
 #: The current version
-__version__ = '0.6.0'
+__version__ = '0.7.0rc1'
