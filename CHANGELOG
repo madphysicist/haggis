@@ -5,6 +5,9 @@ Changelog
 0.6.0 (?)
 ---------
 
+* API changes:
+  - Parameter stop in recipes.RangeBuilder.update is now optional
+  - Property span in recipes.RangeBuilder
 * Bugfixes:
   - Fixed handling of bulleted list styles in files.docx.list_number
 

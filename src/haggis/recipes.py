@@ -23,6 +23,7 @@
 # Version: 11 Jun 2022: Added RangeBuilder
 # Version: 14 Jun 2022: Added RangeBuilder.__repr__
 # Version: 04 Oct 2022: Made RangeBuilder.update stop parameter optional
+# Version: 11 Oct 2022: Added RangeBuilder.span property
 
 
 """
@@ -468,23 +469,36 @@ class RangeBuilder:
     A new builder is uninitialized at first: `start` and `stop` are
     both `None`. To add a new range, call the `update` method. The
     `start` and `stop` properties get the cumulative range.
+
+    Any types that support mutual comparison may be supplied to
+    `update`. Types that support subtraction will enable the `span`
+    property as well.
     """
     def __init__(self):
         """
         Construct a new, uninitialized range builder.
         """
-        self.init = False
+        self._init = False
 
     def __repr__(self):
         """
         Create a string representation of this object.
 
         The result shows the range, and is not representative of an
-        actual constructor call.
+        actual initializer call.
         """
         args = f'{self._start}, {self._stop}' \
-                                        if self.init else '<uninitialized>'
+                                        if self._init else '<uninitialized>'
         return f'{type(self).__name__}({args})'
+
+    @property
+    def init(self):
+        """
+        .. py:attribute:: init
+
+           Inidcates whether the range has been initialized or not.
+        """
+        return self._init
 
     @property
     def start(self):
@@ -494,7 +508,7 @@ class RangeBuilder:
            The minimum lower bound of any of the ranges encountered so
            far. `None` if not initialized with at least one range.
         """
-        if self.init:
+        if self._init:
             return self._start
 
     @property
@@ -503,9 +517,9 @@ class RangeBuilder:
         .. py:attribute:: stop
 
            The maximum upper bound of any of the ranges encountered so
-           far. `None` if not initialized with at least one range.
+           far. `None` if not initialized.
         """
-        if self.init:
+        if self._init:
             return self._stop
 
     @property
@@ -514,11 +528,23 @@ class RangeBuilder:
         .. py:attribute:: range
 
            A list containing `[start, stop]` for a range encompassing
-           all the ones encountered so far.  `None` if not initialized
-           with at least one range.
+           all the values encountered so far.  `None` if not
+           initialized.
         """
-        if self.init:
+        if self._init:
             return [self._start, self._stop]
+
+    @property
+    def span(self):
+        """
+        .. py:attribute:: span
+
+           For types that support subtraction in addition to comparison,
+           This is the difference between `stop` and `start`. `None` if
+           not initialized.
+        """
+        if self._init:
+            return self._stop - self._start
 
     def update(self, start, stop=None):
         """
@@ -537,10 +563,10 @@ class RangeBuilder:
         """
         if stop is None:
             stop = start
-        if self.init:
+        if self._init:
             self._start = min(start, self._start)
             self._stop = max(stop, self._stop)
         else:
             self._start = start
             self._stop = stop
-            self.init = True
+            self._init = True
