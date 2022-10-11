@@ -2,8 +2,12 @@ Changelog
 =========
 
 
-0.6.0 (?)
+0.7.0 (?)
 ---------
+
+
+0.6.0 (2022-10-11)
+------------------
 
 * API changes:
   - Parameter stop in recipes.RangeBuilder.update is now optional
