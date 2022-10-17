@@ -2,8 +2,8 @@ Changelog
 =========
 
 
-0.7.0 (?)
----------
+0.7.0 (2022-10-17)
+------------------
 
 * New functions and classes:
   - npy_util.masked_index
