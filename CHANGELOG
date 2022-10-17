@@ -5,6 +5,15 @@ Changelog
 0.7.0 (?)
 ---------
 
+* New functions and classes:
+  - npy_util.masked_index
+  - npy_util.unmasked_index
+  - npy_util.find_peaks
+* New unit tests:
+  - tests.test_npy_util.TestMaskedIndex
+  - tests.test_npy_util.TestUnmaskedIndex
+  - tests.test_npy_util.TestFindPeaks
+
 
 0.6.0 (2022-10-11)
 ------------------
