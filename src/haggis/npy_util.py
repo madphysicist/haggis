@@ -23,6 +23,7 @@
 # Version: 28 Mar 2022: Added iterate_dtype
 # Version: 01 Jun 2022: Added replace_field
 # Version: 15 Oct 2022: Added masked_index, unmasked_index, find_peaks
+# Version: 24 Oct 2022: Added prune_mask
 
 
 """
@@ -444,6 +445,70 @@ def runs2mask(runs, n=None):
 
     numpy.cumsum(view, out=view)
     return mask
+
+
+def prune_mask(mask, min_length=None, max_length=None, filter_func=None,
+               return_runs=False, return_lengths=False, return_borders=False):
+    """
+    Prune the runs in `mask` to conform to some criteria.
+
+    Parameters
+    ----------
+    mask : array-like
+        Boolean mask. If not boolean, will be cast to bool.
+    min_length : int, optional
+        Runs shorter than this will be removed. Ignored if None.
+    max_length : int, optional
+        Runs longer than this will be removed. Ignored if None.
+    filter_func : callable, optional
+        Function that accepts an Nx2 array of runs, as from `mask2runs`,
+        and returns an N-length boolean mask. True elements in the
+        result will be retained, while False elements will be removed.
+        Called after applying `min_length` and `max_length` constraints.
+    return_runs : bool, optional
+        Whether or not to return an Nx2 array of indices for the start
+        (inclusive) and end (exclusive), of each run within the mask.
+    return_lengths : bool, optional
+        Whether or not to return an array of lengths for each retained
+        run.
+    return_borders : bool, optional
+        Whether or not to return an array of dtype `np.int8` containing
+        1 at each run start and -1 past run ends.
+
+    Return
+    ------
+    pruned : numpy.ndarray[bool]
+        Mask with any runs shorter than  
+    """
+    def len_mask(mask):
+        nonlocal runs, lengths
+        elem = runs[~mask, :].ravel()
+        if elem[-1] == len(borders):
+            elem = elem[:-1]
+        borders[elem] = 0
+        runs = runs[mask]
+        lengths = lengths[mask]
+
+    runs, lengths, borders = mask2runs(mask,
+                                       return_lengths=True, return_borders=True)
+    if min_length is not None:
+        len_mask(lengths >= min_length)
+    if max_length is not None:
+        len_mask(lengths <= max_length)
+    if filter_func is not None:
+        len_mask(filter_func(runs))
+
+    mask = numpy.cumsum(borders).view(bool)
+    result = [mask]
+    if return_runs:
+        result.append(runs)
+    if return_lengths:
+        result.append(lengths)
+    if return_borders:
+        result.append(borders)
+    if len(result) == 1:
+        return mask
+    return tuple(result)
 
 
 def unmasked_index(index, mask):
