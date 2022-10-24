@@ -4,6 +4,10 @@ Changelog
 0.8.0 (?)
 ---------
 
+
+0.7.1 (2022-10-24)
+------------------
+
 * New functions and classes:
   - npy_util.prune_mask
 
