@@ -871,14 +871,14 @@ def multiline_repr(args=(), kws=()):
 
     Parameters
     ----------
-    repr_args : Iterable
+    args : Iterable
         An iterable of strings or 2-element tuples (may be mixed).
         Tuples are of the form `(keyword, function)`. `function` must
         have a signature like `getattr`. If `keyword` starts with an
         asterisk (`*`), the function is expected to return an iterable
         of individual arguments, otherwise it returns a single argument.
-    repr_kws : Iterable
-        An iterable of the same type as `repr_args`, except that
+    kws : Iterable
+        An iterable of the same type as `args`, except that
         star-arguments are forbidden: each keyword may only refer to a
         single object.
 
