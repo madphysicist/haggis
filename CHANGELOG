@@ -7,10 +7,13 @@ Changelog
 * New functions and classes:
   - recipes.chained_getter
 * New unit tests:
+  - tests.test_logs.TestAddLoggingLevel
   - tests.test_logs.TestResetHandlers
   - tests.test_logs.TestLogMaxFilter
   - tests.test_logs.TestMetaLoggableType
   - tests.test_recipes.TestChainedGetter
+* New side-effects:
+  - logs.add_logging_level updates logging.LoggerAdapter
 * Bugfixes:
   - Fixed sense of inclusive in logs.LogMaxFilter
 

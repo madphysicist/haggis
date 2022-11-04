@@ -29,13 +29,16 @@ Tests for the :py:mod:`haggis.logs` module.
 from contextlib import contextmanager
 from io import StringIO
 import logging
+import sys
+from warnings import catch_warnings
 
 from pytest import fixture, raises
 
 from ..logs import (
     KEEP, KEEP_WARN, OVERWRITE, OVERWRITE_WARN, RAISE,
-    reset_handlers, LogMaxFilter, MetaLoggableType 
+    add_logging_level, reset_handlers, LogMaxFilter, MetaLoggableType
 )
+
 
 class LoggingTestBase(metaclass=MetaLoggableType):
     levelNames = {
@@ -63,12 +66,158 @@ class LoggingTestBase(metaclass=MetaLoggableType):
         self.handler = logging.StreamHandler(self.stream)
         if reset_handler:
             reset_handlers(self.handler, logger=self.logger,
-                           level=initial_level, format=formatter)
+                           level=initial_level, format=formatter,
+                           filter_type=False)
         else:
             self.handler.setFormatter(formatter)
             self.handler.setLevel('NOTSET')
             self.logger.addHandler(self.handler)
         self.logger.setLevel(initial_level)
+
+
+class TestAddLoggingLevel(LoggingTestBase):
+    @contextmanager
+    def remove_level(self, name, method=None):
+        yield
+        if method is None:
+            method = name.lower()
+        logging._acquireLock()
+        try:
+            level = getattr(logging, name)
+            delattr(logging, name)
+            delattr(logging, method)
+            delattr(logging.getLoggerClass(), method)
+            delattr(logging.LoggerAdapter, method)
+            if hasattr(logging, '_levelToName') and \
+                                level in logging._levelToName:
+                del logging._levelToName[level]
+            if hasattr(logging, '_nameToLevel') and \
+                                name in logging._nameToLevel:
+                del logging._nameToLevel[name]
+        finally:
+            logging._releaseLock()
+
+    def test_basic(self):
+        with self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5)
+            assert getattr(logging, 'XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName('XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName(logging.DEBUG + 5) == 'XDEBUG'
+            assert hasattr(logging, 'xdebug')
+            assert hasattr(logging.getLoggerClass(), 'xdebug')
+            assert hasattr(logging.LoggerAdapter, 'xdebug')
+
+    def test_keep(self):
+        with catch_warnings(record=True) as w, self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=KEEP)
+            assert not w
+
+            add_logging_level('XDEBUG', logging.DEBUG + 1, if_exists=KEEP)
+            assert not w
+
+            assert getattr(logging, 'XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName('XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName(logging.DEBUG + 5) == 'XDEBUG'
+            assert hasattr(logging, 'xdebug')
+            assert hasattr(logging.getLoggerClass(), 'xdebug')
+            assert hasattr(logging.LoggerAdapter, 'xdebug')
+
+    def test_keep_warn(self):
+        with catch_warnings(record=True) as w, self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=KEEP_WARN)
+            assert not w
+
+            add_logging_level('XDEBUG', logging.DEBUG + 1, if_exists=KEEP_WARN)
+            assert len(w) == 1
+            assert 'XDEBUG' in str(w[0].message)
+            assert '2/5' in str(w[0].message)  # logging.XDEBUG and mapping
+
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=KEEP_WARN)
+            assert len(w) == 1
+
+            assert getattr(logging, 'XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName('XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName(logging.DEBUG + 5) == 'XDEBUG'
+            assert hasattr(logging, 'xdebug')
+            assert hasattr(logging.getLoggerClass(), 'xdebug')
+            assert hasattr(logging.LoggerAdapter, 'xdebug')
+
+    def test_overwrite(self):
+        with catch_warnings(record=True) as w, self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=OVERWRITE)
+            assert not w
+
+            add_logging_level('XDEBUG', logging.DEBUG + 1, if_exists=OVERWRITE)
+            assert not w
+
+            assert getattr(logging, 'XDEBUG') == logging.DEBUG + 1
+            assert logging.getLevelName('XDEBUG') == logging.DEBUG + 1
+            assert logging.getLevelName(logging.DEBUG + 5) == 'XDEBUG'
+            assert hasattr(logging, 'xdebug')
+            assert hasattr(logging.getLoggerClass(), 'xdebug')
+            assert hasattr(logging.LoggerAdapter, 'xdebug')
+
+    def test_overwrite_warn(self):
+        with catch_warnings(record=True) as w, self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5,
+                              if_exists=OVERWRITE_WARN)
+            assert not w
+
+            add_logging_level('XDEBUG', logging.DEBUG + 1,
+                              if_exists=OVERWRITE_WARN)
+            assert len(w) == 1
+            assert 'XDEBUG' in str(w[0].message)
+            assert '2/5' in str(w[0].message)  # logging.XDEBUG and mapping
+
+            add_logging_level('XDEBUG', logging.DEBUG + 1,
+                              if_exists=OVERWRITE_WARN)
+            assert len(w) == 1
+
+            assert getattr(logging, 'XDEBUG') == logging.DEBUG + 1
+            assert logging.getLevelName('XDEBUG') == logging.DEBUG + 1
+            assert logging.getLevelName(logging.DEBUG + 5) == 'XDEBUG'
+            assert hasattr(logging, 'xdebug')
+            assert hasattr(logging.getLoggerClass(), 'xdebug')
+            assert hasattr(logging.LoggerAdapter, 'xdebug')
+
+    def test_raise(self):
+        with catch_warnings(record=True) as w, self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=RAISE)
+            assert not w
+
+            raises(AttributeError, add_logging_level, 'XDEBUG',
+                   logging.DEBUG + 1, if_exists=RAISE)
+            assert not w
+
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=RAISE)
+            assert not w
+
+            assert getattr(logging, 'XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName('XDEBUG') == logging.DEBUG + 5
+            assert logging.getLevelName(logging.DEBUG + 5) == 'XDEBUG'
+            assert hasattr(logging, 'xdebug')
+            assert hasattr(logging.getLoggerClass(), 'xdebug')
+            assert hasattr(logging.LoggerAdapter, 'xdebug')
+
+    def test_logger(self):
+        with self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=RAISE)
+            self.logger.xdebug('message1')
+            self.logger.log(logging.XDEBUG, 'message2')
+        self.handler.flush()
+        assert self.stream.getvalue() == 'XDEBUG message1\nXDEBUG message2\n'
+
+    def test_logger_adapter(self):
+        with self.remove_level('XDEBUG'):
+            add_logging_level('XDEBUG', logging.DEBUG + 5, if_exists=RAISE)
+            adapter = logging.LoggerAdapter(self.logger, {})
+            adapter.xdebug('message1')
+            adapter.log(logging.XDEBUG, 'message2')
+        self.handler.flush()
+        assert self.stream.getvalue() == 'XDEBUG message1\nXDEBUG message2\n'
+
+    def test_bad_name(self):
+        raises(ValueError, add_logging_level, 'lowercase', 1)
 
 
 class TestResetHandlers(LoggingTestBase):
