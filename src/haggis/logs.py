@@ -313,11 +313,32 @@ def LogMaxFilter(level, inclusive=True):
     Levels can be compared either exclusively or inclusively to the
     threshold.
 
-    This method returns a comparison function rather than an object with
-    a ``filter`` method, so it is not compatible with `logging` before
+    Parameters
+    ----------
+    level : int
+        The cutoff level: only messages below this will be passed
+        through.
+    inclusive : bool
+        If True, messages at level will be cut off. Otherwise, only
+        messages strictly more severe than `level` will be cut off.
+
+    Return
+    ------
+    filter :
+        A callable filter that operates on log records.
+
+    Notes
+    -----
+    This function returns a callable rather than an object with a
+    ``filter`` method, so it is not compatible with `logging` before
     Python 3.2.
     """
-    comparator = level.__ge__ if inclusive else level.__gt__
+    if not isinstance(level, int):
+        level = logging.getLevelName(level)
+    if not isinstance(level, int):
+        raise TypeError('Numerical level or '
+                        'level that maps to number required')
+    comparator = level.__gt__ if inclusive else level.__ge__
 
     def filter(log_record):
         return comparator(log_record.levelno)
