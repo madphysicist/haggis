@@ -4,6 +4,11 @@ Changelog
 0.8.0 (?)
 ---------
 
+* New functions and classes:
+  - recipes.chained_getter
+* New unit tests:
+  - tests.test_recipes.TestChainedGetter
+
 
 0.7.1 (2022-10-24)
 ------------------

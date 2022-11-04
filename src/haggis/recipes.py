@@ -24,6 +24,7 @@
 # Version: 14 Jun 2022: Added RangeBuilder.__repr__
 # Version: 04 Oct 2022: Made RangeBuilder.update stop parameter optional
 # Version: 11 Oct 2022: Added RangeBuilder.span property
+# Version: 03 Nov 2022: Added chained_getter
 
 
 """
@@ -35,16 +36,18 @@ documentation, and other sources like Stack Overflow.
 
 
 __all__ = [
-    'all_combinations', 'all_nsc', 'any_nsc', 'CloseableMixin', 'consume',
-    'grouper', 'immutable', 'islast', 'is_ordered_subset', 'KeyedSingleton',
-    'lenumerate', 'RangeBuilder', 'shift_left',
+    'all_combinations', 'all_nsc', 'any_nsc', 'chained_getter',
+    'CloseableMixin', 'consume', 'grouper', 'immutable', 'islast',
+    'is_ordered_subset', 'KeyedSingleton', 'lenumerate', 'RangeBuilder',
+    'shift_left',
 ]
 
 
 from collections import deque
 from functools import reduce
 from itertools import chain, combinations, islice, repeat
-from operator import index, or_, and_
+from operator import index, or_, and_, attrgetter, itemgetter
+import re
 
 try:
     from contextlib import AbstractContextManager
@@ -81,7 +84,7 @@ class CloseableMixin(AbstractContextManager):
 
 def immutable(allow_properties=True,
               docstring='Forbids write access to class attributes.'):
-    """
+    r"""
     Create a class decorator that sets a pre-defined version of
     :py:meth:`~object.__setattr__` that forbids write access to the
     attributes of a class.
@@ -570,3 +573,115 @@ class RangeBuilder:
             self._start = start
             self._stop = stop
             self._init = True
+
+
+class chained_getter:
+    """
+    Create a getter function similar to :py:func:`operator.attrgetter`
+    that can traverse a chain of index and attribute lookups.
+
+    The `spec` string is formatted very similarly to that of
+    :py:func:`operator.attrgetter`, with the addition that indices may
+    be specified as well, similarly to :py:func:`operator.itemgetter`.
+
+    Indices can be integer, positional, or named arguments. To
+    specify a positional index, simply leave the brackets blank and
+    supply the value in `*args`. To specify a named argument, place the
+    name in brackets and add the corresponding value to `**kwargs`.
+
+    Parameters
+    ----------
+    spec : str
+        A format string that determines a series of attribute and index
+        lookups to perform.
+    *args :
+        Positional arguments to fill in for empty bracket placeholders
+        in the `spec`. The index is computed from the number of empty
+        brackets only.
+    **kwargs :
+        Named arguments to fill in for brackets with key identifiers
+        in `spec`.
+
+    Return
+    ------
+    A callable that can look up multiple nested attributes and indices,
+    similarly to, but more generally than :py:func:`operator.attrgetter`
+    and :py:func:`operator.itemgetter`.
+
+    Examples
+    --------
+    The following will create a getter for the first element of
+    attribute ``a``::
+
+        chained_getter('a[0]')
+.
+    Attributes may be chained::
+
+        chained_getter('a.b[1].c.d')
+
+    For non-numerical indices, supply the index object as a positional
+    argument by leaving empty brackets. When called on object ``x``,
+    the following will look up ``x.a.b['key']``::
+
+        chained_getter('a.b[]', 'key')
+
+    Named arguments can also be used by placing an identifier name in
+    the brackets and adding the corresponding value to ``kwargs``::
+
+        chained_getter('a.b[name]', name='key')
+
+    Indices can be chained just like attributes, and numbers can be
+    specified as any other object. Named and positional indices can be
+    mixed. Position index is computed from the number of empty brackets
+    found. The following will index ``[3]['key']['index'][4][5][6]``::
+
+        chained_getter('[][name1][][][name2][name3]',
+                       3, 'index', 4, name1='key', name2=5, name3=6)
+    """
+    _index_pattern = re.compile(r'\[([^\]]*)\]')
+    _attr_pattern = re.compile(r'[\.\w]*')
+
+    def __init__(self, spec, *args, **kwargs):
+        def get_index(element):
+            nonlocal pos_count
+
+            if not element:
+                idx = pos_count
+                pos_count += 1
+                return args[idx]
+            if element.replace('-', '').isdigit():
+                return int(element)
+            return kwargs[element]
+
+        def get_attribute(element):
+            if not self._attr_pattern.fullmatch(element):
+                raise SyntaxError('Invalid characer in attribute name')
+            if any(attr[0].isdigit() for attr in element.split('.') if attr):
+                raise SyntaxError('Attribute name may not start with a digit')
+            return element
+
+        elements = deque()
+        pos_count = 0
+        for i, element in enumerate(self._index_pattern.split(spec)):
+            if i % 2:
+                # Handle indices
+                getter = itemgetter(get_index(element))
+            elif element:
+                # Handle non-empty attribute chains
+                if i > 0:
+                    if element[0] != '.':
+                        raise SyntaxError('Attribute after index '
+                                          'must start with .')
+                    element = element[1:]
+                getter = attrgetter(get_attribute(element))
+            else:
+                # Skip empty attributes (separating indices)
+                continue
+            elements.append(getter)
+
+        self._elements = elements
+
+    def __call__(self, target):
+        for getter in self._elements:
+            target = getter(target)
+        return target
