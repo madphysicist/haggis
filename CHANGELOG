@@ -1,8 +1,8 @@
 Changelog
 =========
 
-0.8.0 (?)
----------
+0.8.0 (2022-11-04)
+------------------
 
 * New functions and classes:
   - recipes.chained_getter
