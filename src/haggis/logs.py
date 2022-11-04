@@ -487,6 +487,9 @@ def reset_handlers(handler, level='NOTSET', format=None, logger=None,
     If a handler that is being removed has a ``close`` method, it will
     be called, unless `remove_hook` is explicitly set.
 
+    If both `filter_type` and `filter_hook` are set, both conditions
+    must be met in order for a handler to be removed.
+
     Parameters
     ----------
     handler : logging.Handler
@@ -508,7 +511,7 @@ def reset_handlers(handler, level='NOTSET', format=None, logger=None,
         If :py:obj:`None`, then filtering by type will be done only if
         `filter_hook` is not set. A :py:class:`bool` explicitly sets
         filtering by ``type(handler)`` on and off regardless of
-        ``filter_hook``.
+        `filter_hook`.
     filter_hook : None or callable
         A function that accepts a :py:class:`~logging.Handler` and
         returns a :py:class:`bool`. :py:obj:`True` indicates that an

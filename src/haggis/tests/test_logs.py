@@ -57,7 +57,7 @@ class LoggingTestBase(metaclass=MetaLoggableType):
     def formatter(self):
         return logging.Formatter('%(levelname)s %(message)s')
 
-    @fixture
+    @fixture(autouse=True)
     def log_setup(self, initial_level, reset_handler, formatter):
         self.stream = StringIO()
         self.handler = logging.StreamHandler(self.stream)
@@ -69,6 +69,158 @@ class LoggingTestBase(metaclass=MetaLoggableType):
             self.handler.setLevel('NOTSET')
             self.logger.addHandler(self.handler)
         self.logger.setLevel(initial_level)
+
+
+class TestResetHandlers(LoggingTestBase):
+    @fixture
+    def reset_handler(self):
+        return False
+
+    def test_handler_none(self):
+        raises(AttributeError, reset_handlers, None, logger=self.logger)
+
+    def test_format(self):
+        stream = StringIO()
+        if sys.version_info >= (3, 8):
+            format = logging.Formatter('XXX', validate=False)
+        else:
+            format = logging.Formatter('XXX')
+        reset_handlers(logging.StreamHandler(stream), logger=self.logger,
+                       format=format, filter_type=False)
+        self.logger.debug('test')
+        assert len(self.logger.handlers) == 1
+        self.logger.handlers[0].flush()
+        assert stream.getvalue() == 'XXX\n'
+
+    def test_logger(self):
+        logger = logging.getLogger(self.logger.name + '.a')
+
+        for i in range(3):
+            self.logger.addHandler(logging.NullHandler())
+
+        reset_handlers(logging.NullHandler(), logger=logger, filter_type=False)
+
+        assert len(self.logger.handlers) >= 3
+        assert len(logger.handlers) == 1
+
+    def test_level(self):
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       level='WARNING', filter_type=False)
+        assert len(self.logger.handlers) == 1
+        assert self.logger.handlers[0].level == logging.WARNING
+
+    def test_remove_hook(self):
+        for i in range(3):
+            self.logger.addHandler(logging.NullHandler())
+
+        def remove_hook(handler):
+            nonlocal remove_count
+            remove_count += 1
+
+        intial_count = len(self.logger.handlers)
+        remove_count = 0
+
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       remove_hook=remove_hook, filter_type=False)
+
+        assert intial_count >= 3
+        assert remove_count == intial_count
+
+    def test_bad_filter_type(self):
+        raises(TypeError, reset_handlers, logging.NullHandler(),
+               filter_type='a')
+        raises(TypeError, reset_handlers, logging.NullHandler(),
+               filter_type=logging.StreamHandler)
+
+    def test_type_filter_type(self):
+        self.logger.handlers[:] = []
+        for i in range(3):
+            self.logger.addHandler(logging.StreamHandler(StringIO()))
+            self.logger.addHandler(logging.NullHandler())
+        assert len(self.logger.handlers) == 6
+
+        reset_handlers(logging.NullHandler(), logger=self.logger)
+        assert len(self.logger.handlers) == 4
+        assert sum(isinstance(h, logging.NullHandler)
+                   for h in self.logger.handlers) == 1
+        assert sum(isinstance(h, logging.StreamHandler)
+                   for h in self.logger.handlers) == 3
+
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       filter_type=logging.Handler)
+        assert len(self.logger.handlers) == 1
+        assert isinstance(self.logger.handlers[0], logging.NullHandler)
+
+    def test_true_filter_type(self):
+        self.logger.handlers[:] = []
+        for i in range(3):
+            self.logger.addHandler(logging.StreamHandler(StringIO()))
+            self.logger.addHandler(logging.NullHandler())
+        assert len(self.logger.handlers) == 6
+
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       filter_type=True)
+        assert len(self.logger.handlers) == 4
+        assert sum(isinstance(h, logging.NullHandler)
+                   for h in self.logger.handlers) == 1
+        assert sum(isinstance(h, logging.StreamHandler)
+                   for h in self.logger.handlers) == 3
+
+    def test_false_filter_type(self):
+        self.logger.handlers[:] = []
+        for i in range(3):
+            self.logger.addHandler(logging.StreamHandler(StringIO()))
+            self.logger.addHandler(logging.NullHandler())
+        assert len(self.logger.handlers) == 6
+
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       filter_type=False)
+        assert len(self.logger.handlers) == 1
+        assert isinstance(self.logger.handlers[0], logging.NullHandler)
+
+    def test_filter_hook_no_type(self):
+        self.logger.handlers[:] = []
+        for i in range(3):
+            self.logger.addHandler(logging.StreamHandler(StringIO()))
+            self.logger.addHandler(logging.NullHandler())
+        assert len(self.logger.handlers) == 6
+
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       filter_hook=lambda h: True)
+        assert len(self.logger.handlers) == 1
+        assert isinstance(self.logger.handlers[0], logging.NullHandler)
+
+    def test_filter_hook(self):
+        self.logger.handlers[:] = []
+        for i in range(6):
+            htype = type('Handler{}'.format(i), (logging.Handler,), {})
+            handler = htype(level=10 * i)
+            self.logger.addHandler(handler)
+        assert len(self.logger.handlers) == 6
+
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       filter_hook=lambda h: h.level < 30)
+        assert len(self.logger.handlers) == 4
+        assert sum(isinstance(h, logging.NullHandler)
+                   for h in self.logger.handlers) == 1
+
+    def test_filter_hook_and_type(self):
+        self.logger.handlers[:] = []
+        for i in range(6):
+            htype = type('Handler{}'.format(i), (logging.Handler,), {})
+            handler = htype(level=10 * i)
+            self.logger.addHandler(handler)
+        assert len(self.logger.handlers) == 6
+
+        reset_handlers(logging.NullHandler(), logger=self.logger,
+                       filter_hook=lambda h: h.level < 30,
+                       filter_type=logging.NullHandler)
+        assert len(self.logger.handlers) == 7
+        assert sum(isinstance(h, logging.NullHandler)
+                   for h in self.logger.handlers) == 1
+
+    def test_bad_filter_hook(self):
+        raises(TypeError, reset_handlers, logger=self.logger, filter_hook='a')
 
 
 class TestLogMaxFilter(LoggingTestBase):
@@ -84,7 +236,7 @@ class TestLogMaxFilter(LoggingTestBase):
         obj.removeFilter(filter)
         self.handler.flush()
 
-    def test_inclusive_logger(self, log_setup):
+    def test_inclusive_logger(self):
         with self.temp_log_max_filter(self.logger, 'WARNING', inclusive=True):
             for value, name in self.levelNames.items():
                 self.logger.log(value, name)
@@ -96,7 +248,7 @@ class TestLogMaxFilter(LoggingTestBase):
             else:
                 assert ' '.join((name, name)) in text
 
-    def test_exclusive_logger(self, log_setup):
+    def test_exclusive_logger(self):
         with self.temp_log_max_filter(self.logger, logging.WARNING,
                                       inclusive=False):
             for value, name in self.levelNames.items():
@@ -109,7 +261,7 @@ class TestLogMaxFilter(LoggingTestBase):
             else:
                 assert ' '.join((name, name)) in text
 
-    def test_inclusive_handler(self, log_setup):
+    def test_inclusive_handler(self):
         with self.temp_log_max_filter(self.handler, logging.WARNING,
                                       inclusive=True):
             for value, name in self.levelNames.items():
@@ -122,7 +274,7 @@ class TestLogMaxFilter(LoggingTestBase):
             else:
                 assert ' '.join((name, name)) in text
 
-    def test_exclusive_handler(self, log_setup):
+    def test_exclusive_handler(self):
         with self.temp_log_max_filter(self.handler, 'WARNING',
                                       inclusive=False):
             for value, name in self.levelNames.items():
@@ -138,7 +290,7 @@ class TestLogMaxFilter(LoggingTestBase):
         self.handler.removeFilter(filter)
 
 
-    def test_custom_level(self, log_setup):
+    def test_custom_level(self):
         with self.temp_log_max_filter(self.logger, logging.WARNING + 5,
                                       inclusive=False):
             for value, name in self.levelNames.items():
@@ -151,7 +303,7 @@ class TestLogMaxFilter(LoggingTestBase):
             else:
                 assert ' '.join((name, name)) in text
 
-    def test_bad_level(self, log_setup):
+    def test_bad_level(self):
         raises(TypeError, LogMaxFilter, '_NOTALEVEL32', inclusive=True)
         raises(TypeError, LogMaxFilter, '_NOTALEVEL32', inclusive=False)
 
