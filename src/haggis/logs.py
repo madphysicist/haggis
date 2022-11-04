@@ -19,6 +19,7 @@
 
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
+# Version: 30 Oct 2022: Added support for logging.LoggerAdapter
 
 
 """
@@ -181,15 +182,23 @@ def add_logging_level(level_name, level_num, method_name=None,
     >>>     logging.xtrace('so did this', exc_info=False)
 
     The ``TRACE`` level can be added using :py:func:`add_trace_level`.
+
+    Note
+    ----
+    Before adding new levels, please see the cautionary note here:
+    https://docs.python.org/3/howto/logging.html#custom-levels.
     """
     # This method was inspired by the answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
     # http://stackoverflow.com/a/13638084/2988730
-    def for_logger_class(self, message, *args, **kwargs):
+    def for_logger_adapter(self, msg, *args, **kwargs):
+        self.log(level_num, msg, *args, **kwargs)
+
+    def for_logger_class(self, msg, *args, **kwargs):
         if self.isEnabledFor(level_num):
             kwargs.setdefault('exc_info', exc_info)
             kwargs.setdefault('stack_info', stack_info)
-            self._log(level_num, message, args, **kwargs)
+            self._log(level_num, msg, args, **kwargs)
 
     def for_logging_module(*args, **kwargs):
         kwargs.setdefault('exc_info', exc_info)
@@ -198,8 +207,10 @@ def add_logging_level(level_name, level_num, method_name=None,
 
     if not method_name:
         method_name = level_name.lower()
+    if method_name == level_name:
+        raise ValueError('Method name must differ from level name')
 
-    # The number of items required for a full registration is 4
+    # The number of items required for a full registration is 5
     items_found = 0
     # Items that are found complete but are not expected values
     items_conflict = 0
@@ -209,6 +220,7 @@ def add_logging_level(level_name, level_num, method_name=None,
     try:
         registered_num = logging.getLevelName(level_name)
         logger_class = logging.getLoggerClass()
+        logger_adapter = logging.LoggerAdapter
 
         if registered_num != 'Level ' + level_name:
             items_found += 1
@@ -258,9 +270,22 @@ def add_logging_level(level_name, level_num, method_name=None,
                     )
                 items_conflict += 1
 
+        if hasattr(logger_adapter, method_name):
+            items_found += 1
+            adapter_method = getattr(logger_adapter, method_name)
+            if not callable(adapter_method) or \
+                    getattr(adapter_method, '_original_name', None) != \
+                    for_logger_adapter.__name__:
+                if if_exists == RAISE:
+                    raise AttributeError(
+                        'Method {!r} already defined in logger '
+                        'adapter'.format(method_name)
+                    )
+                items_conflict += 1
+
         if items_found > 0:
             # items_found >= items_conflict always
-            if (items_conflict or items_found < 4) and \
+            if (items_conflict or items_found < 5) and \
                     if_exists in (KEEP_WARN, OVERWRITE_WARN):
                 action = 'Keeping' if if_exists == KEEP_WARN else 'Overwriting'
                 if items_conflict:
@@ -270,7 +295,7 @@ def add_logging_level(level_name, level_num, method_name=None,
                     problem = 'is partially configured'
                     items = items_found
                 warnings.warn(
-                    'Logging level {!r} {} already ({}/4 items): {}'.format(
+                    'Logging level {!r} {} already ({}/5 items): {}'.format(
                         level_name, problem, items, action)
                 )
 
@@ -279,16 +304,19 @@ def add_logging_level(level_name, level_num, method_name=None,
 
         # Make sure the method names are set to sensible values, but
         # preserve the names of the old methods for future verification.
-        for_logger_class._original_name = for_logger_class.__name__
-        for_logger_class.__name__ = method_name
         for_logging_module._original_name = for_logging_module.__name__
         for_logging_module.__name__ = method_name
+        for_logger_class._original_name = for_logger_class.__name__
+        for_logger_class.__name__ = method_name
+        for_logger_adapter._original_name = for_logger_adapter.__name__
+        for_logger_adapter.__name__ = method_name
 
         # Actually add the new level
         logging.addLevelName(level_num, level_name)
         setattr(logging, level_name, level_num)
-        setattr(logger_class, method_name, for_logger_class)
         setattr(logging, method_name, for_logging_module)
+        setattr(logger_class, method_name, for_logger_class)
+        setattr(logger_adapter, method_name, for_logger_adapter)
     finally:
         logging._releaseLock()
 
@@ -313,11 +341,32 @@ def LogMaxFilter(level, inclusive=True):
     Levels can be compared either exclusively or inclusively to the
     threshold.
 
-    This method returns a comparison function rather than an object with
-    a ``filter`` method, so it is not compatible with `logging` before
+    Parameters
+    ----------
+    level : int
+        The cutoff level: only messages below this will be passed
+        through.
+    inclusive : bool
+        If True, messages at level will be cut off. Otherwise, only
+        messages strictly more severe than `level` will be cut off.
+
+    Return
+    ------
+    filter :
+        A callable filter that operates on log records.
+
+    Notes
+    -----
+    This function returns a callable rather than an object with a
+    ``filter`` method, so it is not compatible with `logging` before
     Python 3.2.
     """
-    comparator = level.__ge__ if inclusive else level.__gt__
+    if not isinstance(level, int):
+        level = logging.getLevelName(level)
+    if not isinstance(level, int):
+        raise TypeError('Numerical level or '
+                        'level that maps to number required')
+    comparator = level.__gt__ if inclusive else level.__ge__
 
     def filter(log_record):
         return comparator(log_record.levelno)
@@ -466,6 +515,9 @@ def reset_handlers(handler, level='NOTSET', format=None, logger=None,
     If a handler that is being removed has a ``close`` method, it will
     be called, unless `remove_hook` is explicitly set.
 
+    If both `filter_type` and `filter_hook` are set, both conditions
+    must be met in order for a handler to be removed.
+
     Parameters
     ----------
     handler : logging.Handler
@@ -487,7 +539,7 @@ def reset_handlers(handler, level='NOTSET', format=None, logger=None,
         If :py:obj:`None`, then filtering by type will be done only if
         `filter_hook` is not set. A :py:class:`bool` explicitly sets
         filtering by ``type(handler)`` on and off regardless of
-        ``filter_hook``.
+        `filter_hook`.
     filter_hook : None or callable
         A function that accepts a :py:class:`~logging.Handler` and
         returns a :py:class:`bool`. :py:obj:`True` indicates that an
