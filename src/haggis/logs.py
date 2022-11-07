@@ -36,6 +36,8 @@ import logging
 import sys
 import warnings
 
+from . import Sentinel
+
 
 __all__ = [
     'KEEP', 'KEEP_WARN', 'OVERWRITE', 'OVERWRITE_WARN', 'RAISE',
@@ -218,6 +220,25 @@ def add_logging_level(level_name, level_num, method_name=None,
     # Items that are found complete but are not expected values
     items_conflict = 0
 
+    def check_conflict(conflict, message):
+        if conflict and if_exists == RAISE:
+            raise AttributeError(message)
+        return conflict
+
+    def check_func_conflict(func, name, original_name, is_func, target):
+        conflict = not (
+            callable(func) and
+            getattr(func, '_original_name', None) == original_name and
+            getattr(func, '_exc_info', None) == exc_info and
+            getattr(func, '_stack_info', None) == stack_info
+        )
+        return check_conflict(
+            conflict, '{} {!r} already defined in {}'.format(
+                "Function" if is_func else "Method", name, target
+            )
+        )
+        return conflict
+
     # Lock because logger class and level name are queried and set
     logging._acquireLock()
     try:
@@ -227,64 +248,42 @@ def add_logging_level(level_name, level_num, method_name=None,
 
         if registered_num != 'Level ' + level_name:
             items_found += 1
-            if registered_num != level_num:
-                if if_exists == RAISE:
-                    # Technically this is not an attribute issue, but for
-                    # consistency
-                    raise AttributeError(
-                        'Level {!r} already registered in logging '
-                        'module'.format(level_name)
-                    )
-                items_conflict += 1
+            items_conflict += check_conflict(
+                registered_num != level_num, 'Level {!r} already registered '
+                'in logging module'.format(level_name)
+            )
 
-        if hasattr(logging, level_name):
+        current_level = getattr(logging, level_name, Sentinel)
+        if current_level is not Sentinel:
             items_found += 1
-            if getattr(logging, level_name) != level_num:
-                if if_exists == RAISE:
-                    raise AttributeError(
-                        'Level {!r} already defined in logging '
-                        'module'.format(level_name)
-                    )
-                items_conflict += 1
+            items_conflict += check_conflict(
+                current_level != level_num, 'Level {!r} already defined '
+                'in logging module'.format(level_name)
+            )
 
-        if hasattr(logging, method_name):
+        logging_func = getattr(logging, method_name, Sentinel)
+        if logging_func is not Sentinel:
             items_found += 1
-            logging_method = getattr(logging, method_name)
-            if not callable(logging_method) or \
-                    getattr(logging_method, '_original_name', None) != \
-                    for_logging_module.__name__:
-                if if_exists == RAISE:
-                    raise AttributeError(
-                        'Function {!r} already defined in logging '
-                        'module'.format(method_name)
-                    )
-                items_conflict += 1
+            items_conflict += check_func_conflict(
+                logging_func, method_name, for_logging_module.__name__,
+                True, 'logging module'
+            )
 
-        if hasattr(logger_class, method_name):
+        logger_method = getattr(logger_class, method_name, Sentinel)
+        if logger_method is not Sentinel:
             items_found += 1
-            logger_method = getattr(logger_class, method_name)
-            if not callable(logger_method) or \
-                    getattr(logger_method, '_original_name', None) != \
-                    for_logger_class.__name__:
-                if if_exists == RAISE:
-                    raise AttributeError(
-                        'Method {!r} already defined in logger '
-                        'class'.format(method_name)
-                    )
-                items_conflict += 1
+            items_conflict += check_func_conflict(
+                logger_method, method_name, for_logger_class.__name__,
+                False, 'logger class'
+            )
 
-        if hasattr(logger_adapter, method_name):
+        adapter_method = getattr(logger_adapter, method_name, Sentinel)
+        if adapter_method is not Sentinel:
             items_found += 1
-            adapter_method = getattr(logger_adapter, method_name)
-            if not callable(adapter_method) or \
-                    getattr(adapter_method, '_original_name', None) != \
-                    for_logger_adapter.__name__:
-                if if_exists == RAISE:
-                    raise AttributeError(
-                        'Method {!r} already defined in logger '
-                        'adapter'.format(method_name)
-                    )
-                items_conflict += 1
+            items_conflict += check_func_conflict(
+                adapter_method, method_name, for_logger_adapter.__name__,
+                False, 'logger adapter'
+            )
 
         if items_found > 0:
             # items_found >= items_conflict always
@@ -307,12 +306,14 @@ def add_logging_level(level_name, level_num, method_name=None,
 
         # Make sure the method names are set to sensible values, but
         # preserve the names of the old methods for future verification.
-        for_logging_module._original_name = for_logging_module.__name__
-        for_logging_module.__name__ = method_name
-        for_logger_class._original_name = for_logger_class.__name__
-        for_logger_class.__name__ = method_name
-        for_logger_adapter._original_name = for_logger_adapter.__name__
-        for_logger_adapter.__name__ = method_name
+        def label_func(func):
+            func._original_name = func.__name__
+            func.__name__ = method_name
+            func._exc_info = exc_info
+            func._stack_info = stack_info
+        label_func(for_logging_module)
+        label_func(for_logger_class)
+        label_func(for_logger_adapter)
 
         # Actually add the new level
         logging.addLevelName(level_num, level_name)

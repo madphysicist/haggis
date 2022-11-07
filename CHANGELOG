@@ -9,6 +9,8 @@ Changelog
 * Bugfixes:
   - Added missing default kwargs to monkeypatched version of
     logging.LogAdapter method in logs.add_log_level
+* logs.add_logging_level verifies exception info settings if prior calls
+  are found
 
 0.8.0 (2022-11-04)
 ------------------
