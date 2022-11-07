@@ -4,6 +4,9 @@ Changelog
 0.9.0 (?)
 ---------
 
+* Bugfixes:
+  - Added missing default kwargs to monkeypatched version of
+    logging.LogAdapter method in logs.add_log_level
 
 0.8.0 (2022-11-04)
 ------------------
@@ -16,10 +19,9 @@ Changelog
   - tests.test_logs.TestLogMaxFilter
   - tests.test_logs.TestMetaLoggableType
   - tests.test_recipes.TestChainedGetter
-* New side-effects:
-  - logs.add_logging_level updates logging.LoggerAdapter
 * Bugfixes:
   - Fixed sense of inclusive in logs.LogMaxFilter
+* logs.add_logging_level updates logging.LoggerAdapter
 
 
 0.7.1 (2022-10-24)

@@ -20,6 +20,7 @@
 # Author: Joseph Fox-Rabinovitz <jfoxrabinovitz at gmail dot com>
 # Version: 13 Apr 2019: Initial Coding
 # Version: 30 Oct 2022: Added support for logging.LoggerAdapter
+# Version: 07 Nov 2022: Fixes and enhancements to add_logging_level
 
 
 """
@@ -192,6 +193,8 @@ def add_logging_level(level_name, level_num, method_name=None,
     # http://stackoverflow.com/q/2183233/2988730, especially
     # http://stackoverflow.com/a/13638084/2988730
     def for_logger_adapter(self, msg, *args, **kwargs):
+        kwargs.setdefault('exc_info', exc_info)
+        kwargs.setdefault('stack_info', stack_info)
         self.log(level_num, msg, *args, **kwargs)
 
     def for_logger_class(self, msg, *args, **kwargs):
