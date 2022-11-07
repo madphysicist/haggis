@@ -331,10 +331,25 @@ def add_trace_level(if_exists=KEEP_WARN):
     The numerical trace level is ``5`` lower than
     :py:data:`~logging.DEBUG`. It does not log stack or exception
     information by default. A ``trace`` method will be added to the
-    :py:mod:`logging` module and to the current default
-    :py:class:`~logging.Logger` class.
+    :py:mod:`logging` module, to the current default
+    :py:class:`~logging.Logger` class, and to the
+    :py:class:`~logging.LoggerAdapter` class.
     """
     add_logging_level('TRACE', logging.DEBUG - 5, 'trace', if_exists)
+
+
+def add_detail_level(if_exists=KEEP_WARN):
+    """
+    Add a new ``DETAIL`` level to the :py:mod:`logging` module.
+
+    The numerical trace level is ``5`` higher than
+    :py:data:`~logging.DEBUG`. It does not log stack or exception
+    information by default. A ``detail`` method will be added to the
+    :py:mod:`logging` module, to the current default
+    :py:class:`~logging.Logger` class, and to the
+    :py:class:`~logging.LoggerAdapter` class.
+    """
+    add_logging_level('DETAIL', logging.DEBUG + 5, 'detail', if_exists)
 
 
 def LogMaxFilter(level, inclusive=True):
