@@ -42,7 +42,7 @@ from .numbers import digit_count
 
 __all__ = [
     'find_peaks', 'isolate_dtype', 'iterate_dtype', 'map_array', 'mask2runs',
-    'masked_index', 'replace_field', 'runs2mask', 'unmasked_index'
+    'masked_index', 'prune_mask', 'replace_field', 'runs2mask', 'unmasked_index'
 ]
 
 
