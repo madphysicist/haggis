@@ -469,7 +469,8 @@ def prune_mask(mask, min_length=None, max_length=None, filter_func=None,
         Function that accepts an Nx2 array of runs, as from `mask2runs`,
         and returns an N-length boolean mask. True elements in the
         result will be retained, while False elements will be removed.
-        Called after applying `min_length` and `max_length` constraints.
+        Called after applying `min_length` and `max_length` constraints,
+        if those are requested.
     return_runs : bool, optional
         Whether or not to return an Nx2 array of indices for the start
         (inclusive) and end (exclusive), of each run within the mask.
@@ -483,7 +484,19 @@ def prune_mask(mask, min_length=None, max_length=None, filter_func=None,
     Return
     ------
     pruned : numpy.ndarray[bool]
-        Mask with any runs shorter than  
+        Mask with any runs shorter than `min_length` and longer than
+        `max_length` removed and `filter_func` applied to the remaining runs.
+    runs : numpy.ndarray
+        Nx2 array of remaining run indices, returned if `return_runs` is set.
+        Same format as the result of `mask2runs`. Start index in the first
+        column is inclusive, stop index in the second column is exclusive.
+    lengths : numpy.ndarray
+        N-element array of lengths of remaining runs, returned if
+        `return_lengths` is set.
+    borders : numpy.ndarray[numpy.int8]
+        Array of the same size as `mask` containing 1 at the start of each run
+        and -1 past the end, returned if `return_borders` is set. The sum of
+        this array is the mask.
     """
     def len_mask(mask):
         nonlocal runs, lengths
