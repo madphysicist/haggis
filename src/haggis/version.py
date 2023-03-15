@@ -40,6 +40,8 @@
 # Version: 24 Oct 2022: Bumped to 0.7.1
 # Version: 24 Oct 2022: Bumped back to 0.8.0rc1
 # Version: 04 Nov 2022: Bumped to 0.8.0, part of proper release branch scheme
+# Version: 04 Nov 2022: Bumped to 0.9.0rc1
+# Version: 15 Mar 2023: Bumped to 0.9.0
 
 
 """
@@ -62,4 +64,4 @@ back in.
 
 
 #: The current version
-__version__ = '0.8.0'
+__version__ = '0.9.0'

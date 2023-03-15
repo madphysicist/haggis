@@ -134,15 +134,15 @@ def ellipse(*args, num_points=1e3, **kwargs):
         scale = math.sqrt(d**2 / (4 * a) + e**2 / (4 * c) - f)
         h = -d / (2 * a)
         k = -e / (2 * c)
-        xx = h + ax_x * scale * numpy.sin(t)
-        yy = k + ax_y * scale * numpy.cos(t)
+        x = xx = h + ax_x * scale * numpy.sin(t)
+        y = yy = k + ax_y * scale * numpy.cos(t)
         if theta:
             x = xx * cos - yy * sin
             y = xx * sin + yy * cos
     elif coeffCount == 4:
         ax_x, ax_y, h, k = args
-        xx = ax_x * numpy.sin(t)
-        yy = ax_y * numpy.cos(t)
+        x = xx = ax_x * numpy.sin(t)
+        y = yy = ax_y * numpy.cos(t)
         theta = float(kwargs.pop('theta', 0.0))
         if theta:
             sin = math.sin(theta)
