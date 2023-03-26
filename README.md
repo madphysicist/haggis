@@ -1,4 +1,4 @@
-This project has moved to GitLab: https://gitlab.com/madphysicist1/haggis. Please
+This project has moved to GitLab: https://gitlab.com/madphysicist/haggis. Please
 download the latest code and submit issues there rather than GitHub, which will no
 longer be monitored until this stale clone is deleted.
 
